@@ -99,7 +99,7 @@ function AgentRow({ p }: { p: ProviderInfo }) {
         </form>
       )}
       {result && (
-        <Callout tone={result.ok ? 'success' : 'error'} title={result.ok ? t('claude.testOk') : t('claude.testFailed')}>
+        <Callout tone={result.ok ? 'success' : 'error'} title={result.ok ? t('agents.testOk', { provider: p.label }) : t('agents.testFailed', { provider: p.label })}>
           {result.ok ? t('agents.testOkDesc', { ms: Math.round(result.ms) }) : result.error}
         </Callout>
       )}

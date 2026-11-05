@@ -27,7 +27,7 @@ checks and the logs, explains, and fixes what is safe to fix.
 |---|---|
 | python, uv | runtime and toolchain |
 | claude_cli, claude_auth | Claude Code installed and signed in |
-| claude_version | Claude Code behind its latest release (info; releases carry security fixes). With Settings -> Claude -> Update Claude Code automatically (off by default) the server installs the stable release by itself when nothing has run for 10 min; the hint says why it did not - fix: `claude update` |
+| claude_version | Claude Code behind its latest release (info; releases carry security fixes). With Settings -> Agents -> Update Claude Code automatically (off by default) the server installs the stable release by itself when nothing has run for 10 min; the hint says why it did not - fix: `claude update` |
 | skill_listing | how many skills Claude sees in every prompt and their size; past Claude Code's budget the least used ones lose their description (info) - see [Skills](skills) |
 | deps | with `--deps`: installed packages (server, web, video tools) with a known vulnerability, from osv.dev |
 | setup | first sign-in done |
@@ -111,7 +111,7 @@ certificate on the first request: `journalctl -u caddy` shows why it failed. Val
 
 **Lost setup link.** `maxxing setup-link`.
 
-**Every session fails at once.** Claude is not signed in or the token expired: Settings -> Claude ->
+**Every session fails at once.** Claude is not signed in or the token expired: Settings -> Agents ->
 Test, or `maxxing doctor --live`. Renew with `claude setup-token`.
 
 **A session stays "running".** Press Stop. If it persists: `systemctl list-units 'maxxing-*'` and

@@ -22,7 +22,7 @@ code that runs as root on purpose.
 **What limits it:**
 - **Permission modes, per topic and per job** (the real limit): `bypass` (default, no questions), `acceptEdits`
   (edits files, asks before commands), `default` (asks before edits and commands), `plan` (reads only, proposes a
-  plan). Set them for the whole server (Settings -> Claude), a topic (topic menu -> **Permissions**) or a
+  plan). Set them for the whole server (Settings -> Agents), a topic (topic menu -> **Permissions**) or a
   scheduled job. Put every topic and job that reads untrusted content in a stricter mode.
 - Each session and job runs in its own systemd unit with a memory cap and a few protections that never get in
   the way of administering the server: it cannot set the system clock, change the process personality or use
@@ -34,7 +34,7 @@ Treat anything you paste into a session (documents, web pages, emails) as instru
 follow: do not feed it untrusted content with the bypass mode on. Topics and jobs that read the web, e-mails or
 forwarded messages are the ones to put in a stricter mode.
 
-**Protect the secrets** (Settings -> Claude, on by default) makes Claude's tools refuse to read or edit
+**Protect the secrets** (Settings -> Agents, on by default) makes Claude's tools refuse to read or edit
 `secrets.json` and `~/.ssh` in every mode. It is a speed bump, not a wall: a script written on purpose to open the
 file still can.
 

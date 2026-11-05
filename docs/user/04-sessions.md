@@ -108,10 +108,10 @@ A topic has one new-session draft: picking, in a new session, a topic that alrea
 
 **Its title** is short: the start of the message shows at once, then a shortened title replaces it (greetings and
 "can you…" removed, cut on a word): "Tu vas me créer une session d'automatisation de E-ink" becomes *Créer une
-session d'automatisation*. With **Titles written by Claude** on (Settings -> Claude, off by default: one quick call
+session d'automatisation*. With **Titles written by Claude** on (Settings -> Agents, off by default: one quick call
 to the smallest model per new session, counted in your Claude plan), the title names the subject instead -
 *Automatisation E-ink* - a few seconds later (if the call fails, the message is shortened). The same goes for a session started from Telegram (its thread is renamed too) and for an empty session
-on its first message. A title you typed, a Telegram thread you named, or a rename made meanwhile, is never replaced. Turn it off in Settings -> Claude
+on its first message. A title you typed, a Telegram thread you named, or a rename made meanwhile, is never replaced. Turn it off in Settings -> Agents
 (**Short session titles**): the title is then the start of the first message.
 
 ## The composer
@@ -282,7 +282,7 @@ in its menu).
 ## Models
 
 Each session can use its own model (menu in the session header). Empty = the default model from
-Settings -> Claude. The label always shows the model that really answered the last turn; if it
+Settings -> Agents. The label always shows the model that really answered the last turn; if it
 differs from your choice, a marker tells you. Each model has its own prompt cache: on a session past 50k tokens of
 context, switching asks first, because the new model reads the whole conversation once without cache (Compact first
 to make the switch cheap).
@@ -296,14 +296,14 @@ When a conversation gets long, the context fills up and answers get slower and m
 | **Compact** | Claude summarizes the conversation, then continues **in the same session** with a fresh context seeded by the summary. The history stays visible. |
 | **Hand off** | Creates a **new session** seeded with a summary of this one; the old one is archived. Good when the work changes direction. You can write in the new session right away: your message waits for the summary, then runs with it. |
 
-**Automatic compaction** (Settings -> Claude, 400k tokens by default): when a turn ends with more context than the
+**Automatic compaction** (Settings -> Agents, 400k tokens by default): when a turn ends with more context than the
 threshold, Harness compacts the session by itself before your next message - a note in the conversation says so.
 Long sessions then stop re-sending their whole history on every call, which roughly halves the tokens they use.
 Pick a higher threshold (or Off) for a session that needs every detail of a very long exchange. A single long turn
 (many tool calls in a row) is compacted along the way too, near the same threshold, instead of growing up to the
 model's limit. `maxxing sessions token-report` shows, on your own sessions, what each threshold would have saved.
 
-**Compact when you come back** (Settings -> Claude, 200k tokens by default): Claude keeps the start of a conversation
+**Compact when you come back** (Settings -> Agents, 200k tokens by default): Claude keeps the start of a conversation
 in a cache for a few minutes (up to an hour). When you write to a session that has been quiet for longer and holds at least that
 much context, the cache is gone and the whole history would be re-sent at full price - so Harness summarizes the
 session first (a note says "Back after 2 h: ...") and your message runs in a fresh thread seeded with the summary.
@@ -312,7 +312,7 @@ never trigger it, nor does a session whose context is mostly what every new thre
 memory): summarizing it would save nothing. Pick Off to keep the full thread whatever the pause. Stop during the
 summary cancels only the summary, your message stays: it runs right after, in the full thread.
 
-**Smart resume** (Settings -> Claude, 100k tokens by default): when you come back to a session whose cache expired
+**Smart resume** (Settings -> Agents, 100k tokens by default): when you come back to a session whose cache expired
 with at least that much context - or after 5 minutes or more with twice as much - Harness first has Claude summarize
 the session **for the message you just sent**. The summary keeps exact what your message needs (the files, commands,
 values, errors, the plan in progress or the question Claude asked), then your message runs in a fresh, much smaller

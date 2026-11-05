@@ -15,7 +15,7 @@ export const SETTINGS_SECTIONS: { id: SettingsSectionId; label: TKey; descriptio
   { id: 'features', label: 'settings.features', description: 'settings.features.desc', icon: ToggleRight, keywords: 'features options hud mirror telegram usage presentation enable experimental' },
   { id: 'notifications', label: 'settings.notifications', description: 'settings.notifications.desc', icon: Bell, keywords: 'notification alert sound badge pulse finished done' },
   { id: 'security', label: 'settings.security', description: 'settings.security.desc', icon: Shield, keywords: 'password sign out' },
-  { id: 'claude', label: 'settings.claude', description: 'settings.claude.desc', icon: Bot, keywords: 'model token api key permission' },
+  { id: 'claude', label: 'settings.claude', description: 'settings.claude.desc', icon: Bot, keywords: 'agent codex cursor model token api key permission' },
   { id: 'memory', label: 'settings.memory', description: 'settings.memory.desc', icon: Brain, keywords: 'second brain memory.md clean compaction lines' },
   { id: 'telegram', label: 'settings.telegram', description: 'settings.telegram.desc', icon: Send, keywords: 'bot threads' },
   { id: 'voice', label: 'settings.voice', description: 'settings.voice.desc', icon: Mic, keywords: 'microphone speech transcription whisper dictation audio' },

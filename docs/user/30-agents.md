@@ -12,13 +12,13 @@ Telegram thread and history: only the agent that answers changes.
 1. Install the CLI on the server and sign in once, as root:
    - Codex: `npm i -g @openai/codex`, then `codex login` (ChatGPT account) or give an API key.
    - Cursor: `curl https://cursor.com/install -fsS | bash`, then `cursor-agent login`.
-2. Settings → Claude → **Other agents: Codex and Cursor** shows each CLI's state (installed, signed in), the command to
+2. Settings → Agents → **Other agents: Codex and Cursor** shows each CLI's state (installed, signed in), the command to
    run on the server, an optional API key field and a test button.
-3. Settings → Claude → **Default agent** shows which CLIs are installed and signed in. Pick the one new sessions use.
+3. Settings → Agents → **Default agent** shows which CLIs are installed and signed in. Pick the one new sessions use.
 4. In a session, the **Agent** picker next to the model changes the agent for the next messages. Switching starts a
    new thread in the new CLI: the conversation shown above is kept, but the new agent does not remember it.
 
-An API key works too: paste it in the agent's card (Settings → Claude → Other agents).
+An API key works too: paste it in the agent's card (Settings → Agents → Other agents).
 
 ## Usage in the sidebar
 

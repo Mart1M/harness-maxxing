@@ -99,7 +99,7 @@ on if you want them), and `maxxing update` keeps a working server Python and a `
 already has its own `node`: Harness Maxxing uses its copy, your programs keep theirs.
 
 Each `maxxing update` moves them to the versions of the new release (installed next to the old ones, switched once
-they work). Claude Code keeps updating itself (Settings -> Claude). System packages (Caddy, ffmpeg, git...) get their
+they work). Claude Code keeps updating itself (Settings -> Agents). System packages (Caddy, ffmpeg, git...) get their
 security updates from `unattended-upgrades`.
 
 Open the link: the [onboarding](onboarding) does the rest.
