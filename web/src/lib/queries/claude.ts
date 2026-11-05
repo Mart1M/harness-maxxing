@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok, ProvidersStatus } from '../types'
+import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok, ProviderTestResult, ProvidersStatus } from '../types'
 import { qk } from './keys'
 import { useMut } from './util'
 
@@ -12,6 +12,16 @@ export function useClaudeStatus() {
 /** Which agent CLIs (Claude Code, Codex, Cursor) are installed and signed in on this server. */
 export function useProviders() {
   return useQuery({ queryKey: qk.providers, queryFn: () => api.get<ProvidersStatus>('/api/claude/providers'), staleTime: 30_000 })
+}
+
+export function useProviderKey() {
+  return useMut(({ id, value }: { id: string; value: string }) => api.post<Ok>(`/api/claude/providers/${id}/key`, { value }), { invalidate: [qk.providers], errorToast: false })
+}
+export function useProviderKeyRemove() {
+  return useMut((id: string) => api.del<Ok>(`/api/claude/providers/${id}/key`), { invalidate: [qk.providers] })
+}
+export function useProviderTest() {
+  return useMut((id: string) => api.post<ProviderTestResult>(`/api/claude/providers/${id}/test`), { invalidate: [qk.providers], errorToast: false })
 }
 
 export function useClaudeAuth() {

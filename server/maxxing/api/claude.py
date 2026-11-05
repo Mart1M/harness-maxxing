@@ -230,10 +230,25 @@ def _provider_status() -> list[dict]:
         info: dict = {"id": name, "label": providers.label(name), "installed": bool(found), "path": found}
         if name == providers.CLAUDE:
             info["signed_in"] = bool(auth_status().get("ok"))
-        elif found:
-            info["signed_in"], info["detail"] = _login_state(name, found)
+        else:
+            info.update(install=providers.INSTALL[name], login=providers.LOGIN[name], key_hint=providers.KEY_HINT[name],
+                        key_set=bool(config.load_secrets().get(providers.SECRET_FOR[name])))
+            if found:
+                info["signed_in"], info["detail"] = _login_state(name, found)
+                info["version"] = _cli_version(found)
+                if info["signed_in"] is not True and info["key_set"]:
+                    info["signed_in"] = True                 # an API key is stored: the CLI gets it from the environment
         out.append(info)
     return out
+
+
+def _cli_version(exe: str) -> str | None:
+    try:
+        r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=10, env=spawn.base_env())
+    except (OSError, subprocess.SubprocessError):
+        return None
+    line = (r.stdout or r.stderr).strip().splitlines()
+    return line[0][:60] if line and r.returncode == 0 else None
 
 
 def _login_state(name: str, exe: str) -> tuple[bool | None, str]:
@@ -250,6 +265,67 @@ def _login_state(name: str, exe: str) -> tuple[bool | None, str]:
     if "not logged in" in low or "not authenticated" in low or r.returncode != 0:
         return False, text.splitlines()[0][:120] if text else ""
     return None, text.splitlines()[0][:120] if text else ""
+
+
+class ProviderKeyIn(BaseModel):
+    value: str
+
+
+def _provider(name: str) -> str:
+    if name not in providers.SECRET_FOR:
+        raise HTTPException(404, detail={"error": "not_found", "message": "provider: codex or cursor"})
+    return name
+
+
+@router.post("/providers/{name}/key")
+async def set_provider_key(name: str, body: ProviderKeyIn):
+    name = _provider(name)
+    value = body.value.strip()
+    if len(value) < 10 or any(c.isspace() for c in value) or not (value.isascii() and value.isprintable()):
+        raise HTTPException(400, detail={"error": "invalid", "message": "This does not look like an API key"})
+    config.set_secret(providers.SECRET_FOR[name], value)
+    return {"ok": True}
+
+
+@router.delete("/providers/{name}/key")
+async def delete_provider_key(name: str):
+    config.set_secret(providers.SECRET_FOR[_provider(name)], None)
+    return {"ok": True}
+
+
+def run_provider_test(name: str) -> dict:
+    """One real, read-only call of the CLI (a few tokens): installed, signed in, and the answer parses."""
+    import time
+    path = spawn.base_env()["PATH"]
+    exe = providers.binary(name, path)
+    out: dict = {"ok": False, "ms": 0}
+    args = providers.build_args(name, exe, mode="plan", model="", csid="", fresh=True, cwd="/tmp")
+    env = {**spawn.base_env(), **spawn.provider_env(name)}
+    t0 = time.time()
+    try:
+        r = subprocess.run(args, input="Reply with the single word: ok", capture_output=True, text=True,
+                           timeout=120, cwd="/tmp", env=env)
+    except (OSError, subprocess.SubprocessError) as e:
+        out["error"] = f"{type(e).__name__}: {e}"[:300]
+        return out
+    out["ms"] = int((time.time() - t0) * 1000)
+    adapter, result = providers.make_adapter(name), None
+    for line in r.stdout.splitlines():
+        for ev in adapter.feed(line):
+            if ev.get("type") == "result":
+                result = ev
+    if result and not result.get("is_error"):
+        out["ok"] = True
+        out["answer"] = str(result.get("result") or "")[:80]
+    else:
+        errs = (result or {}).get("errors") or []
+        out["error"] = ("; ".join(map(str, errs)) or r.stderr.strip() or f"exit code {r.returncode}")[-300:]
+    return out
+
+
+@router.post("/providers/{name}/test")
+async def test_provider(name: str):
+    return await asyncio.to_thread(run_provider_test, _provider(name))
 
 
 @router.get("/providers")

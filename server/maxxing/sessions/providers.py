@@ -26,6 +26,10 @@ BIN_ENV = {CLAUDE: "MAXXING_CLAUDE_BIN", CODEX: "MAXXING_CODEX_BIN", CURSOR: "MA
 BIN_NAMES = {CLAUDE: ("claude",), CODEX: ("codex",), CURSOR: ("cursor-agent", "agent")}
 # Secrets (Keys in Settings, flagged "expose", or secrets.json) the CLIs read from their environment
 AUTH_ENV = {CODEX: ("OPENAI_API_KEY", "CODEX_API_KEY"), CURSOR: ("CURSOR_API_KEY",)}
+SECRET_FOR = {CODEX: "openai_api_key", CURSOR: "cursor_api_key"}        # secrets.json names (Settings -> Agents)
+INSTALL = {CODEX: "npm i -g @openai/codex", CURSOR: "curl https://cursor.com/install -fsS | bash"}
+LOGIN = {CODEX: "codex login", CURSOR: "cursor-agent login"}
+KEY_HINT = {CODEX: "sk-…", CURSOR: "key_…"}
 RESUME_LOST = re.compile(r"no conversation found|no (?:saved )?(?:session|chat|rollout|thread)s? .{0,80}found|"
                          r"session .{0,80}not found|chat .{0,80}not found|no such (?:session|chat)|"
                          r"invalid (?:session|chat)|could not resume|failed to resume", re.I)

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, seg } from '../api'
-import type { Changelog, Health, LogsPayload, MemoryInfo, Ok, Preflight, Service, ServiceAction, Session, TokenStats, UpdateReport, UsagePayload, VersionInfo } from '../types'
+import type { Changelog, Health, LogsPayload, MemoryInfo, Ok, Preflight, ProviderUsagePayload, Service, ServiceAction, Session, TokenStats, UpdateReport, UsagePayload, VersionInfo } from '../types'
 import { qk } from './keys'
 import { useMut } from './util'
 
@@ -70,6 +70,9 @@ export function useCompactMemory() {
 }
 export function useUsage(enabled = true, poll = false) {
   return useQuery({ queryKey: qk.system.usage, queryFn: () => api.get<UsagePayload>('/api/usage'), enabled, staleTime: 60_000, refetchInterval: poll ? 60_000 : false })
+}
+export function useProviderUsage(enabled = true, poll = false) {
+  return useQuery({ queryKey: qk.system.providerUsage, queryFn: () => api.get<ProviderUsagePayload>('/api/usage/providers'), enabled, staleTime: 60_000, refetchInterval: poll ? 60_000 : false })
 }
 export function useServiceAction() {
   return useMut(({ name, action }: { name: string; action: ServiceAction }) => api.post<Ok>(`/api/system/services/${seg(name)}/${action}`), {

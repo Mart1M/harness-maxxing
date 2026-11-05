@@ -226,6 +226,21 @@ def add_usage(m: dict, usage: dict | None, cost: float, when: float) -> None:
     m["days"] = {k: days[k] for k in sorted(days)[-DAYS_KEPT:]}
 
 
+def add_provider_tokens(m: dict, provider: str, usage: dict | None, when: float) -> None:
+    """Tokens of this turn by agent (`provider_days[provider][day]`, last DAYS_KEPT days): the sidebar shows what
+    Codex and Cursor used, which they do not report as a plan percentage."""
+    u = usage if isinstance(usage, dict) else {}
+    total = sum(int(u.get(src) or 0) for _, src in TOKEN_KEYS)
+    if total <= 0:
+        return
+    pd = m.get("provider_days") if isinstance(m.get("provider_days"), dict) else {}
+    days = pd.get(provider) if isinstance(pd.get(provider), dict) else {}
+    day = time.strftime("%Y-%m-%d", time.localtime(when))
+    days[day] = int(days.get(day) or 0) + total
+    pd[provider] = {k: days[k] for k in sorted(days)[-DAYS_KEPT:]}
+    m["provider_days"] = pd
+
+
 def context_window_of(result: dict, real_model: str | None = None) -> int | None:
     """Context window (tokens) of the main model of a raw Claude `result` (modelUsage[..].contextWindow)."""
     mu = result.get("modelUsage") if isinstance(result.get("modelUsage"), dict) else {}

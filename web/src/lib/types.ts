@@ -128,7 +128,8 @@ export type Session = {
   plan_ready: boolean
 }
 export type ProviderId = 'claude' | 'codex' | 'cursor'
-export type ProviderInfo = { id: ProviderId; label: string; installed: boolean; path?: string | null; signed_in?: boolean | null; detail?: string }
+export type ProviderInfo = { id: ProviderId; label: string; installed: boolean; path?: string | null; signed_in?: boolean | null; detail?: string; version?: string | null; /** Commands to run on the server (Codex, Cursor). */ install?: string; login?: string; key_hint?: string; /** An API key is stored for this agent (never sent back). */ key_set?: boolean }
+export type ProviderTestResult = { ok: boolean; ms: number; answer?: string; error?: string }
 export type ProvidersStatus = { default: ProviderId; providers: ProviderInfo[] }
 export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; /** claude | codex | cursor (default: the server's default provider). */ provider?: ProviderId; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string }
 export type PatchSessionBody = { title?: string; model?: string; /** Switching starts a new thread in the new CLI; the history above is kept. */ provider?: ProviderId; archived?: boolean; notify?: boolean; plan_mode?: boolean; favorite?: boolean; /** Move to another topic (idle sessions only). */ path?: string }
@@ -568,6 +569,9 @@ export type UpdateReport = {
   checks: { id: string; title: string; check: string; ok: boolean; output: string }[]
 }
 export type UsageWindow = { pct: number; resets_at: number | null }
+/** Codex / Cursor usage: `available` = real plan limits (Codex writes them), `tokens` = what Harness measured. */
+export type ProviderUsage = { id: 'codex' | 'cursor'; label: string; available: boolean; five_hour: UsageWindow | null; seven_day: UsageWindow | null; plan: string | null; seen_at?: number; tokens: { today: number; week: number } }
+export type ProviderUsagePayload = { codex: ProviderUsage; cursor: ProviderUsage }
 export type UsagePayload = {
   available: boolean
   five_hour: UsageWindow | null

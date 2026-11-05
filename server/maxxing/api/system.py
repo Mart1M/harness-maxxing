@@ -329,6 +329,13 @@ def changelog(limit: int = Query(10, ge=1, le=500)):
     return cl.entries(limit)
 
 
+@router.get("/usage/providers")
+async def usage_providers(force: bool = False):
+    """Codex plan limits (read from its rollout files) and tokens measured by Harness for Codex and Cursor."""
+    from .. import provider_usage
+    return await asyncio.to_thread(provider_usage.usage, force)
+
+
 @router.get("/usage")
 async def usage(force: bool = False):
     return await asyncio.to_thread(health.usage, force)

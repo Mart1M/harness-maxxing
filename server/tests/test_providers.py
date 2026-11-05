@@ -156,3 +156,71 @@ def test_switching_provider_starts_a_new_thread_and_keeps_history(client, topic,
     call = _calls(agents["tmp"] / "fc")[0]
     assert "resume" not in call["argv"]                                         # fresh Codex thread
     assert "codex says ok" in json.dumps(all_events(client, sid))
+
+
+def test_provider_keys_and_test_endpoint(client, agents):
+    assert client.post("/api/claude/providers/claude/key", json={"value": "x" * 20}).status_code == 404
+    assert client.post("/api/claude/providers/codex/key", json={"value": "short"}).status_code == 400
+    assert client.post("/api/claude/providers/codex/key", json={"value": "sk-test-1234567890"}).status_code == 200
+    by = {p["id"]: p for p in client.get("/api/claude/providers").json()["providers"]}
+    assert by["codex"]["key_set"] is True and by["cursor"]["key_set"] is False
+    assert by["codex"]["install"] and by["cursor"]["login"] == "cursor-agent login"
+    assert "sk-test-1234567890" not in json.dumps(by)                       # the key is never sent back
+    t = client.post("/api/claude/providers/codex/test").json()
+    assert t["ok"] is True and t["answer"] == "codex says ok"
+    env_call = _calls(agents["tmp"] / "fc")[-1]
+    assert "read-only" in env_call["argv"]
+    assert client.post("/api/claude/providers/cursor/test").json()["ok"] is True
+    assert client.delete("/api/claude/providers/codex/key").status_code == 200
+    by = {p["id"]: p for p in client.get("/api/claude/providers").json()["providers"]}
+    assert by["codex"]["key_set"] is False
+
+
+def test_provider_key_reaches_the_turn_environment(mx):
+    from maxxing import config
+    from maxxing.sessions import spawn
+    config.set_secret("openai_api_key", "sk-test-1234567890")
+    config.set_secret("cursor_api_key", "key_abcdefghij")
+    assert spawn.provider_env("codex") == {"OPENAI_API_KEY": "sk-test-1234567890", "CODEX_API_KEY": "sk-test-1234567890"}
+    assert spawn.provider_env("cursor") == {"CURSOR_API_KEY": "key_abcdefghij"}
+    assert spawn.provider_env("claude") == {}
+
+
+def test_codex_limits_are_read_from_the_newest_rollout(tmp_path, monkeypatch):
+    from maxxing import provider_usage
+    day = tmp_path / "codex" / "sessions" / "2026" / "11" / "06"
+    day.mkdir(parents=True)
+    now = 1_800_000_000.0
+    old = {"timestamp": "t", "payload": {"type": "token_count", "rate_limits": {
+        "primary": {"used_percent": 99.0, "window_minutes": 300, "resets_at": now + 100}}}}
+    new = {"timestamp": "t", "payload": {"type": "token_count", "rate_limits": {
+        "plan_type": "plus",
+        "primary": {"used_percent": 12.5, "window_minutes": 300, "resets_at": now + 3600},
+        "secondary": {"used_percent": 40.0, "window_minutes": 10080, "resets_at": now - 5}}}}
+    (day / "rollout-a.jsonl").write_text(json.dumps(old) + "\n")
+    f = day / "rollout-b.jsonl"
+    f.write_text("garbage\n" + json.dumps(new) + "\n" + json.dumps({"payload": {"type": "agent_message"}}) + "\n")
+    import os
+    os.utime(day / "rollout-a.jsonl", (now - 500, now - 500))
+    os.utime(f, (now, now))
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex"))
+    lim = provider_usage.codex_limits(now)
+    assert lim["five_hour"] == {"pct": 12.5, "resets_at": now + 3600}
+    assert lim["seven_day"] == {"pct": 0.0, "resets_at": None}              # its reset time has passed
+    assert lim["plan"] == "Plus"
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "nothing"))
+    assert provider_usage.codex_limits(now) is None
+
+
+def test_usage_endpoint_counts_tokens_by_agent(client, topic, agents, monkeypatch, tmp_path):
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "no-codex"))
+    for provider in ("codex", "cursor"):
+        sid = client.post("/api/sessions", json={"path": topic, "message": "hi", "provider": provider}).json()["id"]
+        wait_idle(client, sid)
+    r = client.get("/api/usage/providers", params={"force": "true"})
+    assert r.status_code == 200
+    u = r.json()
+    assert set(u) == {"codex", "cursor"}
+    assert u["codex"]["available"] is False and u["cursor"]["available"] is False       # no plan limits readable
+    assert u["codex"]["tokens"]["today"] == 145 and u["codex"]["tokens"]["week"] == 145     # 100 + 5 + 40
+    assert u["cursor"]["tokens"]["today"] == 145

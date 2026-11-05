@@ -603,6 +603,7 @@ class Runner:
             m["cost_usd"] = round(float(m.get("cost_usd") or 0) + float(cost or 0), 6)
             if a.result is not None:
                 store.add_usage(m, res.get("usage"), float(cost or 0), time.time())
+                store.add_provider_tokens(m, a.provider, res.get("usage"), time.time())
             if a.real_model:
                 m["real_model"] = a.real_model
             if a.start_s is not None:                  # Stats: how fast turns start (last LATENCY_KEPT turns)

@@ -1,5 +1,6 @@
 import { useT } from '@/i18n'
 import { ClaudeConnect } from '@/features/claude/ClaudeConnect'
+import { AgentsCard } from '@/features/claude/AgentsCard'
 import { ClaudeDefaults } from '@/features/claude/ClaudeDefaults'
 import { SettingsCard, SectionStack } from './ui'
 
@@ -9,6 +10,9 @@ export function ClaudeSection() {
     <SectionStack>
       <SettingsCard title={t('claude.connection')} description={t('claude.connectionDesc')}>
         <ClaudeConnect />
+      </SettingsCard>
+      <SettingsCard title={t('agents.title')} description={t('agents.desc')}>
+        <AgentsCard />
       </SettingsCard>
       <SettingsCard title={t('claude.defaults')} description={t('claude.defaultsDesc')}>
         <ClaudeDefaults />
