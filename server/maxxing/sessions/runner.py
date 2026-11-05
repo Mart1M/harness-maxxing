@@ -45,7 +45,7 @@ if __package__ in (None, ""):                       # path invocation
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from maxxing import claude_auth, config, mcp_auto   # noqa: E402  (stdlib-only modules)
-from maxxing.sessions import clip, resume, spawn, store      # noqa: E402
+from maxxing.sessions import clip, providers, resume, spawn, store      # noqa: E402
 
 RESUME_LOST = re.compile(r"no conversation found|session .{0,80}not found|no such session|"
                          r"invalid session|could not resume|failed to resume", re.I)
@@ -92,6 +92,8 @@ class Attempt:
     oom: bool = False                                  # SIGKILLed while the unit's oom_kill counter went up
     mcp_used: set[str] = field(default_factory=set)    # MCP servers (tool form) whose tools were called
     connectors: list[str] | None = None                # claude.ai connectors listed by the init event
+    provider: str = providers.CLAUDE                   # which CLI ran this attempt
+    new_csid: str | None = None                        # thread id the CLI assigned itself (Codex, Cursor)
 
 
 class Runner:
@@ -272,34 +274,53 @@ class Runner:
             store.update(self.sid, plan_ready=False)
         model = (meta.get("model") or cfg.get("default_model") or "").strip()
         mcp_plan = mcp_auto.plan(self.sid, cfg, meta, cwd, item.get("text") or "")   # MCP servers this turn needs
-        base = [spawn.claude_bin(), "-p", "--output-format", "stream-json", "--verbose"]
-        base += spawn.permission_args(mode)[0] + spawn.settings_args(cfg) + spawn.agents_args(cfg, mcp_plan.hint)
-        base += ["--model", model] if model else []
-        from maxxing import pcbridge                    # not at import: the runner starts with stdlib-only modules
-        base += pcbridge.mcp_config_args() + mcp_plan.args
+        provider = providers.normalize_provider(meta.get("provider") or cfg.get("default_provider"))
         env = spawn.claude_env(meta.get("env") or {}, mode)
         env["MAXXING_SESSION"] = self.sid               # `maxxing mcp load` run by the turn finds its session
         text = (PLAN_PREFACE if plan else "") + build_prompt(item)
-        prompt, json_in = stdin_payload(text, item, Path(cfg.get("workspace") or "/").resolve())
-        if json_in:
-            base += ["--input-format", "stream-json"]
+        base: list[str] = []
+        if provider == providers.CLAUDE:
+            base = [spawn.claude_bin(), "-p", "--output-format", "stream-json", "--verbose"]
+            base += spawn.permission_args(mode)[0] + spawn.settings_args(cfg) + spawn.agents_args(cfg, mcp_plan.hint)
+            base += ["--model", model] if model else []
+            from maxxing import pcbridge                # not at import: the runner starts with stdlib-only modules
+            base += pcbridge.mcp_config_args() + mcp_plan.args
+            prompt, json_in = stdin_payload(text, item, Path(cfg.get("workspace") or "/").resolve())
+            if json_in:
+                base += ["--input-format", "stream-json"]
+        else:                                           # Codex / Cursor: plain text prompt, Claude-only flags dropped
+            prompt = text
+            env.update(spawn.provider_env(provider))
         timeout_s = meta.get("timeout_s")
 
         csid, fresh = meta.get("csid") or self.sid, bool(meta.get("fresh", True))
-        a = self.attempt(base + (["--session-id", csid] if fresh else ["--resume", csid]),
-                         prompt, cwd, env, timeout_s, hold=not fresh, csid=csid,
-                         prev_total=0.0 if fresh else store.thread_prev_cost(meta, csid))
+        if meta.get("csid_provider", providers.CLAUDE) != provider:     # the provider changed: its thread is new
+            csid, fresh = (str(uuid.uuid4()) if provider == providers.CLAUDE else ""), True
+            store.update(self.sid, csid=csid, fresh=True)
+
+        def argv(csid: str, fresh: bool) -> list[str]:
+            if provider == providers.CLAUDE:
+                return base + (["--session-id", csid] if fresh else ["--resume", csid])
+            return providers.build_args(provider, providers.binary(provider, spawn.base_env()["PATH"]), mode=mode,
+                                        model=model, csid=csid, fresh=fresh, cwd=cwd)
+
+        a = self.attempt(argv(csid, fresh), prompt, cwd, env, timeout_s, hold=not fresh, csid=csid,
+                         prev_total=0.0 if fresh else store.thread_prev_cost(meta, csid), provider=provider)
         a.fresh = fresh
         if not fresh and a.rc != 0 and not a.saw_init and not a.stopped and _resume_lost(a):
-            csid = str(uuid.uuid4())
+            csid = str(uuid.uuid4()) if provider == providers.CLAUDE else ""
             store.update(self.sid, csid=csid, fresh=True)
             self.note("The previous conversation thread was no longer available. A new thread was started in "
                       "this session: the history above is kept, but Harness no longer remembers it.", "warn")
-            a = self.attempt(base + ["--session-id", csid], prompt, cwd, env, timeout_s, hold=False, csid=csid)
+            a = self.attempt(argv(csid, True), prompt, cwd, env, timeout_s, hold=False, csid=csid, provider=provider)
             a.fresh = True
         else:
             for line in a.held:                        # not a lost thread: keep what it printed
                 self._write_line(line)
+        if a.new_csid and a.new_csid != csid:          # Codex / Cursor choose the thread id themselves
+            store.update(self.sid, csid=a.new_csid)
+        if a.saw_init:
+            store.update(self.sid, csid_provider=provider)
         if a.saw_init:
             store.update(self.sid, fresh=False)
         if a.stopped and self.interrupted and not a.timed_out:
@@ -428,26 +449,27 @@ class Runner:
         return str(cwd) if cwd.is_dir() else None
 
     def attempt(self, args: list[str], prompt: str, cwd: str, env: dict, timeout_s: object,
-                hold: bool, csid: str = "", prev_total: float = 0.0) -> Attempt:
+                hold: bool, csid: str = "", prev_total: float = 0.0, provider: str = providers.CLAUDE) -> Attempt:
         """Run one claude process, streaming its stdout into the raw log. `prev_total`: the running cost Claude
         last reported for thread `csid` (to tell this turn's own cost). Holds the Claude Code update lock (shared)
         meanwhile: an automatic update never replaces the files of a running Claude, and waits for it."""
-        fd = _claude_in_use(self.note)
+        fd = _claude_in_use(self.note) if provider == providers.CLAUDE else None
         try:
-            return self._attempt(args, prompt, cwd, env, timeout_s, hold, csid, prev_total)
+            return self._attempt(args, prompt, cwd, env, timeout_s, hold, csid, prev_total, provider)
         finally:
             if fd is not None:
                 os.close(fd)
 
     def _attempt(self, args: list[str], prompt: str, cwd: str, env: dict, timeout_s: object,
-                 hold: bool, csid: str = "", prev_total: float = 0.0) -> Attempt:
-        a = Attempt(csid=csid, prev_total=prev_total, t0=time.time())
+                 hold: bool, csid: str = "", prev_total: float = 0.0, provider: str = providers.CLAUDE) -> Attempt:
+        a = Attempt(csid=csid, prev_total=prev_total, t0=time.time(), provider=provider)
+        adapter = providers.make_adapter(provider)
         oom_before = _oom_kills()
         try:
             p = subprocess.Popen(args, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, text=True, bufsize=1, start_new_session=True)
         except (OSError, ValueError) as e:                # ValueError: a NUL in an argument (an old session's model)
-            a.stderr = f"Cannot start Claude ({args[0]}): {e}"
+            a.stderr = f"Cannot start {providers.label(provider)} ({args[0]}): {e}"
             return a
         with self.lock:
             self.child = p
@@ -470,24 +492,32 @@ class Runner:
             line = raw.strip()
             if not line:
                 continue
-            ev = _parse(line)
-            if ev is not None:
-                self._observe(ev, a)
-                if ev.get("type") == "result" and a.thread_total is not None:
-                    ev["mx_turn_cost"] = a.turn_cost   # shown per turn in the thread (normalize.py)
-                if not clip.keep_event(ev):            # progress-only lines (thinking_tokens)
+            if provider == providers.CLAUDE:
+                events: list[dict | None] = [_parse(line)]
+            else:                                      # translated to Claude-shaped events; unreadable lines dropped
+                events = list(adapter.feed(line))
+            for ev in events:
+                out = line
+                if ev is not None:
+                    self._observe(ev, a)
+                    if ev.get("type") == "result" and a.thread_total is not None:
+                        ev["mx_turn_cost"] = a.turn_cost   # shown per turn in the thread (normalize.py)
+                    if not clip.keep_event(ev):            # progress-only lines (thinking_tokens)
+                        continue
+                    clip.clip_event(ev)                    # huge tool outputs / the init lists never reach the log
+                    ev.setdefault("mx_at", time.time())
+                    out = json.dumps(ev, ensure_ascii=False)
+                elif provider != providers.CLAUDE:
                     continue
-                clip.clip_event(ev)                    # huge tool outputs / the init lists never reach the log
-                ev.setdefault("mx_at", time.time())
-                line = json.dumps(ev, ensure_ascii=False)
-            if hold and not a.saw_init:
-                a.held.append(line)
-                continue
-            if a.held:
-                for h in a.held:
-                    self._write_line(h)
-                a.held = []
-            self._write_line(line)
+                if hold and not a.saw_init:
+                    a.held.append(out)
+                    continue
+                if a.held:
+                    for h in a.held:
+                        self._write_line(h)
+                    a.held = []
+                self._write_line(out)
+        a.new_csid = adapter.thread_id
         a.rc = p.wait()
         if a.rc in (-9, 137) and oom_before is not None:
             a.oom = (_oom_kills() or 0) > oom_before
@@ -555,10 +585,10 @@ class Runner:
             errors = res.get("errors") if isinstance(res.get("errors"), list) else []
             err = ("; ".join(str(e) for e in errors) or a.stderr or
                    ("Turn stopped (timeout)" if a.timed_out else "")
-                   or f"Claude exited with code {a.rc}")[-300:]
+                   or f"{providers.label(a.provider)} exited with code {a.rc}")[-300:]
             if a.oom and not a.timed_out:
                 err = OOM_ERROR
-        if not (a.stopped and not a.timed_out):
+        if not (a.stopped and not a.timed_out) and a.provider == providers.CLAUDE:   # Claude sign-in state only
             auth_err = _auth_error(a, ok)
             if auth_err:
                 err = auth_err
@@ -952,7 +982,7 @@ def _auth_error(a: Attempt, ok: bool) -> str | None:
 def _resume_lost(a: Attempt) -> bool:
     errs = (a.result or {}).get("errors") if a.result else None
     text = a.stderr + " " + " ".join(str(e) for e in errs or [])
-    return bool(RESUME_LOST.search(text))
+    return bool(RESUME_LOST.search(text) or providers.RESUME_LOST.search(text))
 
 
 def main(argv: list[str]) -> int:

@@ -37,7 +37,7 @@ COMPACT_WINDOW_MIN, COMPACT_WINDOW_MAX = 100000, 1000000     # the range Claude 
 # `claude_quiet_start`: no update check, telemetry or feature-flag fetch at start - measured 0.87 -> 0.52 s to the
 # first event, and ~900 fewer prompt tokens per call; the 1-hour prompt cache of subscriptions is unchanged.
 QUIET_START_ENV = "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-FORWARDED = ("MAXXING_STATE", "MAXXING_LISTEN_PORT", "MAXXING_CLAUDE_BIN", "MAXXING_SPAWN", "MAXXING_TELEGRAM_API",
+FORWARDED = ("MAXXING_STATE", "MAXXING_LISTEN_PORT", "MAXXING_CLAUDE_BIN", "MAXXING_CODEX_BIN", "MAXXING_CURSOR_BIN", "MAXXING_SPAWN", "MAXXING_TELEGRAM_API",
              "FAKE_CLAUDE_DIR", "LANG", "LC_ALL") + TUNING_ENV
 
 
@@ -114,6 +114,18 @@ def permission_args(mode: str) -> tuple[list[str], dict[str, str]]:
         return ["--permission-mode", "plan"], {}
     env = {"IS_SANDBOX": "1"} if os.geteuid() == 0 else {}   # bypass refuses root otherwise
     return ["--dangerously-skip-permissions"], env
+
+
+def provider_env(provider: str) -> dict[str, str]:
+    """Credentials of Codex / Cursor kept in secrets.json (`openai_api_key`, `cursor_api_key`). A CLI signed in with
+    its own login (`codex login`, `cursor-agent login`) needs none; keys of the Keys vault flagged `expose` also apply."""
+    s = config.load_secrets()
+    out: dict[str, str] = {}
+    if provider == "codex" and s.get("openai_api_key"):
+        out["OPENAI_API_KEY"] = out["CODEX_API_KEY"] = str(s["openai_api_key"])
+    if provider == "cursor" and s.get("cursor_api_key"):
+        out["CURSOR_API_KEY"] = str(s["cursor_api_key"])
+    return out
 
 
 def compact_window(cfg: dict) -> int | None:

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .. import bus, config, voice, workspace
-from . import clip, normalize, spawn, store, titles, voicejobs, wake
+from . import clip, normalize, providers, spawn, store, titles, voicejobs, wake
 from .runner import SUMMARY_PROMPT  # noqa: F401  (also used by the runner's automatic compaction)
 
 log = logging.getLogger("maxxing.sessions")
@@ -33,6 +33,18 @@ KNOWN_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5-202510
 _MODEL_RE = re.compile(rb'"model"\s*:\s*"(claude-[a-z0-9.-]+)"')
 # a model id given by a client: passed to `claude --model`, so no option, no NUL, no control character
 _MODEL_ID = re.compile(r"[A-Za-z0-9._:@/\[\]][A-Za-z0-9._:@/\[\]-]{0,99}")
+
+
+def cfg_provider() -> str:
+    return config.load_config().get("default_provider") or providers.CLAUDE
+
+
+def _check_provider(provider: str | None) -> str:
+    """"" keeps the server default; otherwise one of providers.PROVIDERS."""
+    provider = (provider or "").strip().lower()
+    if provider and provider not in providers.PROVIDERS:
+        raise SessionError(400, "bad_provider", "provider: " + ", ".join(providers.PROVIDERS))
+    return provider
 
 
 def _check_model(model: str | None) -> str:
@@ -128,6 +140,7 @@ def public(meta: dict) -> dict:
             "created": m.get("created"), "updated": m.get("updated") or m.get("created"),
             "turns": int(_num(m.get("turns"))), "cost_usd": round(_num(m.get("cost_usd")), 4),
             "model": m.get("model") or "", "real_model": m.get("real_model") or None,
+            "provider": providers.normalize_provider(m.get("provider") or config.load_config().get("default_provider")),
             "context_tokens": m.get("context_tokens"), "context_window": _context_window(m),
             "archived": bool(m.get("archived")), "favorite": bool(m.get("favorite")),
             "notify": bool(m.get("notify")), "source": m.get("source") or "web", "cron": bool(m.get("cron")),
@@ -278,7 +291,7 @@ def create_session(path: str, message: str | None = None, title: str | None = No
                    source: str = "web", notify: bool = False, cron: bool = False,
                    env: dict | None = None, timeout_s: int | None = None, plan_mode: bool = False,
                    permission_mode: str = "", auto_title: bool = False, voice_path: str | None = None,
-                   client_id: str | None = None) -> dict:
+                   client_id: str | None = None, provider: str | None = None) -> dict:
     """`auto_title`: `title` was made from the first message by the caller (Telegram) - still worth a short title."""
     try:
         p = workspace.normalize_path(path)
@@ -289,9 +302,10 @@ def create_session(path: str, message: str | None = None, title: str | None = No
     audio = _check_voice(voice_path)
     given = (title or "").strip()[:120]
     model = _check_model(model)
+    provider = _check_provider(provider)
     meta = store.new_meta(p, given or _default_title(p, message), model=model or "",
                           source=source, notify=notify, cron=cron, env=env, timeout_s=timeout_s, plan_mode=plan_mode,
-                          permission_mode=permission_mode)
+                          permission_mode=permission_mode, provider=provider)
     automatic, has_text = auto_title or not given, bool((message or "").strip())
     if automatic and not has_text:
         meta["title_auto"] = meta["title"]       # short title on the first message (titles.first_message)
@@ -547,8 +561,10 @@ def _signal(pid: int, sig: int) -> None:
 def update_session(sid: str, title: str | None = None, model: str | None = None,
                    archived: bool | None = None, notify: bool | None = None,
                    plan_mode: bool | None = None, favorite: bool | None = None,
-                   path: str | None = None) -> dict:
+                   path: str | None = None, provider: str | None = None) -> dict:
     cur = _require(sid)
+    if provider is not None:
+        provider = _check_provider(provider)
     if model is not None:
         model = _check_model(model)
     if path is not None:
@@ -558,6 +574,10 @@ def update_session(sid: str, title: str | None = None, model: str | None = None,
             m["title"] = title.strip()[:120]
         if model is not None:
             m["model"] = model
+        if provider:
+            m["provider"] = provider
+            if provider != providers.normalize_provider(cur.get("provider") or cfg_provider()):
+                m["model"] = model if model is not None else ""   # model ids belong to one provider
         if archived is not None:
             m["archived"] = bool(archived)
         if notify is not None:

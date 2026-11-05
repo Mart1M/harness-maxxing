@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from .. import claude_auth, claude_update, config
 from ..security import require_auth
-from ..sessions import service, spawn
+from ..sessions import providers, service, spawn
 
 router = APIRouter(prefix="/api/claude", tags=["claude"], dependencies=[Depends(require_auth)])
 
@@ -163,6 +163,7 @@ async def status():
     return {"installed": bool(await asyncio.to_thread(_resolved_bin)), "version": version,
             "auth": await asyncio.to_thread(auth_status),
             "default_model": cfg.get("default_model") or "",
+            "default_provider": providers.normalize_provider(cfg.get("default_provider")),
             "permission_mode": cfg.get("permission_mode") or "bypass",
             "auto_compact_tokens": config.int_setting(cfg, "auto_compact_tokens"),
             "idle_compact_tokens": config.int_setting(cfg, "idle_compact_tokens"),
@@ -207,6 +208,7 @@ async def test():
 
 class SettingsIn(BaseModel):
     default_model: str | None = None
+    default_provider: str | None = None
     permission_mode: str | None = None
     auto_compact_tokens: int | None = Field(None, ge=0, le=2_000_000)
     idle_compact_tokens: int | None = Field(None, ge=0, le=2_000_000)
@@ -218,11 +220,54 @@ class SettingsIn(BaseModel):
     claude_auto_update: bool | None = None
 
 
+def _provider_status() -> list[dict]:
+    """Installed? signed in? for each provider (Claude's sign-in state is the existing auth_status)."""
+    out = []
+    path = spawn.base_env()["PATH"]
+    for name in providers.PROVIDERS:
+        exe = providers.binary(name, path)
+        found = shutil.which(exe, path=path) if os.sep not in exe else (exe if os.access(exe, os.X_OK) else None)
+        info: dict = {"id": name, "label": providers.label(name), "installed": bool(found), "path": found}
+        if name == providers.CLAUDE:
+            info["signed_in"] = bool(auth_status().get("ok"))
+        elif found:
+            info["signed_in"], info["detail"] = _login_state(name, found)
+        out.append(info)
+    return out
+
+
+def _login_state(name: str, exe: str) -> tuple[bool | None, str]:
+    """Best effort: `codex login status` / `cursor-agent status`; None when the CLI cannot say."""
+    args = [exe, "login", "status"] if name == providers.CODEX else [exe, "status"]
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, timeout=15, env=spawn.base_env())
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    text = (r.stdout + r.stderr).strip()
+    low = text.lower()
+    if r.returncode == 0 and ("logged in" in low or "authenticated" in low):
+        return True, text.splitlines()[0][:120] if text else ""
+    if "not logged in" in low or "not authenticated" in low or r.returncode != 0:
+        return False, text.splitlines()[0][:120] if text else ""
+    return None, text.splitlines()[0][:120] if text else ""
+
+
+@router.get("/providers")
+async def list_providers():
+    cfg = config.load_config()
+    return {"default": providers.normalize_provider(cfg.get("default_provider")),
+            "providers": await asyncio.to_thread(_provider_status)}
+
+
 @router.put("/settings")
 async def settings(body: SettingsIn):
     changes: dict = {}
     if body.default_model is not None:
         changes["default_model"] = body.default_model.strip()
+    if body.default_provider is not None:
+        if body.default_provider not in providers.PROVIDERS:
+            raise HTTPException(400, detail={"error": "invalid", "message": "default_provider: " + ", ".join(providers.PROVIDERS)})
+        changes["default_provider"] = body.default_provider
     if body.permission_mode is not None:
         if body.permission_mode not in PERMISSION_MODES:
             raise HTTPException(400, detail={"error": "invalid",

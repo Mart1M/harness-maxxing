@@ -59,7 +59,7 @@ import {
   sessionsQuery,
 } from '@/lib/queries'
 import { errorMessage, isApiError } from '@/lib/api'
-import type { Session } from '@/lib/types'
+import type { ProviderId, Session } from '@/lib/types'
 import {
   Button,
   confirm,
@@ -98,7 +98,7 @@ import { Composer, type ComposerHandle } from './Composer'
 import { QuotePill } from './Quote'
 import { FileMenu } from './FileMenu'
 import { ItemContext } from './Items'
-import { ContextGauge, ModelPicker, StateBadge } from './Widgets'
+import { ContextGauge, ModelPicker, ProviderModelInput, ProviderPicker, StateBadge } from './Widgets'
 import { absTopicDir, fileQuote, fmtCost, topicLabel } from './util'
 import { CONTENT_MIME, contentDragLeave, contentDragOver, contentDrop, useContentDrag, type Dropped } from './contentDrag'
 
@@ -563,6 +563,7 @@ export function SessionColumn({ col, sid, variant, index, count, place }: { col:
   const actions = {
     rename: (title: string) => patch.mutate({ id: sid, title }),
     model: (model: string) => patch.mutate({ id: sid, model }),
+    provider: (provider: ProviderId) => patch.mutate({ id: sid, provider }),
     notify: () => session && patch.mutate({ id: sid, notify: !session.notify }),
     archive: () =>
       session &&
@@ -827,7 +828,12 @@ export function SessionColumn({ col, sid, variant, index, count, place }: { col:
             toolbar={
               session ? (
                 <>
-                  <ModelPicker chosen={session.model} real={session.real_model} contextTokens={session.context_tokens} onChange={actions.model} />
+                  <ProviderPicker chosen={session.provider ?? 'claude'} onChange={actions.provider} disabled={running} />
+                  {(session.provider ?? 'claude') === 'claude' ? (
+                    <ModelPicker chosen={session.model} real={session.real_model} contextTokens={session.context_tokens} onChange={actions.model} />
+                  ) : (
+                    <ProviderModelInput value={session.model} onChange={actions.model} />
+                  )}
                   {session.plan_mode && <PlanChip session={session} />}
                 </>
               ) : (
@@ -1194,6 +1200,8 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
   const send = useSendMessage()
   const [title, setTitle] = React.useState('')
   const [model, setModel] = React.useState('')
+  const [providerChoice, setProviderChoice] = React.useState<ProviderId | ''>('')
+  const provider: ProviderId = providerChoice || claude?.default_provider || 'claude'
   const [planMode, setPlanMode] = React.useState(false)
   const composer = React.useRef<ComposerHandle>(null)
   const [dragFiles, setDragFiles] = React.useState(false)
@@ -1225,7 +1233,7 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
   const onSend = async (text: string, attachments: string[], clientId?: string) => {
     if (made.current) return toMade(made.current, text, attachments, { client_id: clientId })
     try {
-      const s = await create.mutateAsync({ path: col.path, message: text, client_id: clientId, title: title.trim() || undefined, model: model || undefined, attachments, plan_mode: planMode || undefined })
+      const s = await create.mutateAsync({ path: col.path, message: text, client_id: clientId, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, attachments, plan_mode: planMode || undefined })
       made.current = s.id
       seedEmptyLog(s.id)
       usePending.getState().add(s.id, { text, attachments, queued: false })
@@ -1243,7 +1251,7 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
     try {
       const up = await uploadAttachment(col.path, file)
       if (made.current) return toMade(made.current, '', [], { voice: up.path })
-      const s = await create.mutateAsync({ path: col.path, title: title.trim() || undefined, model: model || undefined, plan_mode: planMode || undefined, voice: up.path })
+      const s = await create.mutateAsync({ path: col.path, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, plan_mode: planMode || undefined, voice: up.path })
       made.current = s.id
       seedEmptyLog(s.id)
       usePending.getState().add(s.id, { text: '', attachments: [], queued: false, voice: true })
@@ -1341,8 +1349,9 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
             </div>
             <div className="grid gap-1.5">
               <span className="text-sm font-medium">{t('sessions.model.label')}</span>
-              <div>
-                <ModelPicker chosen={model} onChange={setModel} />
+              <div className="flex flex-wrap items-center gap-1">
+                <ProviderPicker chosen={provider} onChange={(p) => { setProviderChoice(p); setModel('') }} />
+                {provider === 'claude' ? <ModelPicker chosen={model} onChange={setModel} /> : <ProviderModelInput value={model} onChange={setModel} />}
               </div>
             </div>
             <label htmlFor={`plan-${col.key}`} className="flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 has-[:checked]:border-primary/50 has-[:checked]:bg-primary/[0.06]">

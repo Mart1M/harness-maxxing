@@ -1,6 +1,6 @@
 import { ShieldAlert, ShieldCheck, ShieldHalf } from 'lucide-react'
-import { useClaudeSettings, useClaudeStatus } from '@/lib/queries'
-import type { PermissionMode } from '@/lib/types'
+import { useClaudeSettings, useClaudeStatus, useProviders } from '@/lib/queries'
+import type { PermissionMode, ProviderId } from '@/lib/types'
 import { useLang, useT } from '@/i18n'
 import { fmtDate } from '@/lib/format'
 import { Badge, FormField, Select, Skeleton, Switch } from '@/components/ui'
@@ -20,6 +20,7 @@ export function ClaudeDefaults() {
   const lang = useLang()
   const { data: s } = useClaudeStatus()
   const save = useClaudeSettings()
+  const { data: prov } = useProviders()
   if (!s)
     return (
       <div className="grid gap-4">
@@ -36,6 +37,18 @@ export function ClaudeDefaults() {
   ]
   return (
     <div className="grid gap-6">
+      <FormField label={t('cdef.defaultProvider')} hint={t('cdef.defaultProviderHint')}>
+        <Select
+          value={s.default_provider || 'claude'}
+          onValueChange={(v) => save.mutate({ default_provider: v as ProviderId })}
+          options={(prov?.providers ?? [{ id: 'claude', label: 'Claude Code', installed: true }]).map((p) => ({
+            value: p.id,
+            label: p.label + (!p.installed ? ` (${t('sessions.provider.notInstalled')})` : p.signed_in === false ? ` (${t('sessions.provider.signedOut')})` : ''),
+          }))}
+          disabled={save.isPending}
+          className="sm:max-w-sm"
+        />
+      </FormField>
       <FormField label={t('cdef.defaultModel')} hint={t('cdef.defaultModelHint')}>
         <Select
           value={s.default_model || CLI_DEFAULT}

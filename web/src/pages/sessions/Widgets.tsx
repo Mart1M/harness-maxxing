@@ -1,11 +1,78 @@
 // Small column widgets: model picker (shows the model that ACTUALLY answered), context gauge, state badge.
-import { Check, ChevronDown, Cpu } from 'lucide-react'
+import * as React from 'react'
+import { Bot, Check, ChevronDown, Cpu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/i18n'
-import { useClaudeStatus } from '@/lib/queries'
+import { useClaudeStatus, useProviders } from '@/lib/queries'
 import { Badge, confirm, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, StatusDot, Tooltip } from '@/components/ui'
-import type { Session } from '@/lib/types'
+import type { ProviderId, ProviderInfo, Session } from '@/lib/types'
 import { contextWindow, fmtTokens, modelLabel } from './util'
+
+/** Which agent CLI runs the session (Claude Code, Codex CLI, Cursor CLI). Switching starts a new thread in the new
+ *  CLI (the history shown above is kept, the new agent does not remember it). */
+export function ProviderPicker({ chosen, onChange, disabled, compact }: { chosen: ProviderId; onChange: (p: ProviderId) => void; disabled?: boolean; compact?: boolean }) {
+  const t = useT()
+  const { data } = useProviders()
+  const list = data?.providers ?? []
+  const current = list.find((p) => p.id === chosen)
+  const label = current?.label ?? { claude: 'Claude Code', codex: 'Codex CLI', cursor: 'Cursor CLI' }[chosen]
+  return (
+    <DropdownMenu>
+      <Tooltip content={t('sessions.provider.tip', { provider: label })}>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          <button
+            type="button"
+            aria-label={`${t('sessions.provider.label')}: ${label}`}
+            className={cn(
+              'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10',
+              compact && 'h-7 px-1.5',
+            )}
+          >
+            <Bot className="size-3.5 shrink-0" />
+            <span className="truncate">{label}</span>
+            <ChevronDown className="size-3 shrink-0 opacity-60" />
+          </button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t('sessions.provider.next')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {(list.length ? list : (['claude', 'codex', 'cursor'] as const).map((id): ProviderInfo => ({ id, label: id, installed: true }))).map((p) => (
+          <DropdownMenuItem key={p.id} disabled={!p.installed} onSelect={() => p.id !== chosen && onChange(p.id)}>
+            <span className="flex size-4 items-center justify-center">{chosen === p.id && <Check className="!text-foreground" />}</span>
+            <span className="flex-1">{p.label}</span>
+            <span className="text-xs text-muted-foreground">
+              {!p.installed ? t('sessions.provider.notInstalled') : p.signed_in === false ? t('sessions.provider.signedOut') : ''}
+            </span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Codex and Cursor name their models differently from Claude: a free text, empty = the CLI's own default. */
+export function ProviderModelInput({ value, onChange, disabled, compact }: { value: string; onChange: (model: string) => void; disabled?: boolean; compact?: boolean }) {
+  const t = useT()
+  const [draft, setDraft] = React.useState(value)
+  React.useEffect(() => setDraft(value), [value])
+  const commit = () => draft.trim() !== value && onChange(draft.trim())
+  return (
+    <input
+      value={draft}
+      disabled={disabled}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget.blur(), undefined)}
+      placeholder={t('sessions.provider.modelPlaceholder')}
+      aria-label={t('sessions.model.label')}
+      maxLength={100}
+      autoComplete="off"
+      spellCheck={false}
+      className={cn('h-8 w-40 min-w-0 rounded-md bg-transparent px-2 text-xs text-foreground placeholder:text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10', compact && 'h-7 w-32')}
+    />
+  )
+}
 
 /** Family aliases follow resolved versions; pinned model ids still compare exactly. */
 function matchesModel(real: string, chosen: string): boolean {

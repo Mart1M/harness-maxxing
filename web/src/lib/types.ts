@@ -41,6 +41,7 @@ export type ClaudeStatus = {
   /** `ok` reflects the last REAL call (turn / test / background check); `checked_at` null = not verified yet. */
   auth: { ok: boolean; method: ClaudeAuthMethod; detail: string | null; checked_at?: number | null; error?: string | null }
   default_model: string
+  default_provider?: ProviderId
   permission_mode: PermissionMode
   /** A turn ending above this context (tokens) is followed by an automatic compaction; 0 = off. */
   auto_compact_tokens: number
@@ -68,7 +69,7 @@ export type ClaudeAutoUpdate = {
 export type ClaudeAuthBody = { kind: 'oauth_token' | 'api_key'; value: string }
 export type ClaudeAuthResult = { ok: boolean; error?: string }
 export type ClaudeTestResult = { ok: boolean; model: string; ms: number; error?: string }
-export type ClaudeSettingsBody = { default_model?: string; permission_mode?: PermissionMode; auto_compact_tokens?: number; idle_compact_tokens?: number; idle_compact_after_s?: number; smart_resume_tokens?: number; protect_secrets?: boolean; short_titles?: boolean; short_titles_model?: boolean; claude_auto_update?: boolean }
+export type ClaudeSettingsBody = { default_model?: string; default_provider?: ProviderId; permission_mode?: PermissionMode; auto_compact_tokens?: number; idle_compact_tokens?: number; idle_compact_after_s?: number; smart_resume_tokens?: number; protect_secrets?: boolean; short_titles?: boolean; short_titles_model?: boolean; claude_auto_update?: boolean }
 
 /* ---------------------------------------------------------------- Workspace */
 export type Topic = {
@@ -107,6 +108,8 @@ export type Session = {
   turns: number
   cost_usd: number
   model: string
+  /** CLI that runs this session's turns. */
+  provider?: ProviderId
   real_model: string | null
   context_tokens: number | null
   /** Context window of the last turn's model (e.g. 1 000 000); null when unknown. */
@@ -124,8 +127,11 @@ export type Session = {
   /** A plan-mode turn finished: its plan waits for the user's validation. */
   plan_ready: boolean
 }
-export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string }
-export type PatchSessionBody = { title?: string; model?: string; archived?: boolean; notify?: boolean; plan_mode?: boolean; favorite?: boolean; /** Move to another topic (idle sessions only). */ path?: string }
+export type ProviderId = 'claude' | 'codex' | 'cursor'
+export type ProviderInfo = { id: ProviderId; label: string; installed: boolean; path?: string | null; signed_in?: boolean | null; detail?: string }
+export type ProvidersStatus = { default: ProviderId; providers: ProviderInfo[] }
+export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; /** claude | codex | cursor (default: the server's default provider). */ provider?: ProviderId; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string }
+export type PatchSessionBody = { title?: string; model?: string; /** Switching starts a new thread in the new CLI; the history above is kept. */ provider?: ProviderId; archived?: boolean; notify?: boolean; plan_mode?: boolean; favorite?: boolean; /** Move to another topic (idle sessions only). */ path?: string }
 export type SendMessageBody = { text: string; attachments?: string[]; hud?: boolean; /** Absolute path of a voice message sent directly: the server transcribes it, then sends it. */ voice?: string; /** This page's id for the message, found again in `client_ids` of its queue item and its log event (a reload mid-send checks it). */ client_id?: string }
 export type SendMessageResult = { queued: boolean; session: Session }
 export type SessionSearchHit = { id: string; title: string; path: string; snippet: string; at: number }

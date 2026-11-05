@@ -55,6 +55,7 @@ class CreateIn(_Text):
     message: str | None = None
     title: str | None = None
     model: str | None = None
+    provider: str | None = None       # claude | codex | cursor (default: the server's default_provider)
     attachments: list[str] = Field(default_factory=list)
     plan_mode: bool = False
     voice: str | None = None          # absolute path of a voice message sent directly (transcribed afterwards)
@@ -64,6 +65,7 @@ class CreateIn(_Text):
 class PatchIn(_Text):
     title: str | None = None
     model: str | None = None
+    provider: str | None = None       # switching starts a new thread in the new CLI (history above is kept)
     archived: bool | None = None
     notify: bool | None = None
     favorite: bool | None = None
@@ -130,7 +132,8 @@ async def list_sessions(path: str | None = None, archived: int | None = Query(No
 async def create_session(body: CreateIn):
     return await _call(service.create_session, body.path, message=body.message, title=body.title,
                        model=body.model, attachments=body.attachments, source="web",
-                       plan_mode=body.plan_mode, voice_path=body.voice, client_id=body.client_id)
+                       plan_mode=body.plan_mode, voice_path=body.voice, client_id=body.client_id,
+                       provider=body.provider)
 
 
 @router.get("/sessions/search")
@@ -148,7 +151,7 @@ async def get_session(sid: str):
 async def patch_session(sid: str, body: PatchIn):
     return await _call(service.update_session, sid, title=body.title, model=body.model,
                        archived=body.archived, notify=body.notify, plan_mode=body.plan_mode,
-                       favorite=body.favorite, path=body.path)
+                       favorite=body.favorite, path=body.path, provider=body.provider)
 
 
 @router.post("/sessions/{sid}/ask")

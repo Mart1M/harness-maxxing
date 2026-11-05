@@ -1,12 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok } from '../types'
+import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok, ProvidersStatus } from '../types'
 import { qk } from './keys'
 import { useMut } from './util'
 
 export const claudeStatusQuery = () => ({ queryKey: qk.claude, queryFn: () => api.get<ClaudeStatus>('/api/claude/status') })
 export function useClaudeStatus() {
   return useQuery(claudeStatusQuery())
+}
+
+/** Which agent CLIs (Claude Code, Codex, Cursor) are installed and signed in on this server. */
+export function useProviders() {
+  return useQuery({ queryKey: qk.providers, queryFn: () => api.get<ProvidersStatus>('/api/claude/providers'), staleTime: 30_000 })
 }
 
 export function useClaudeAuth() {
