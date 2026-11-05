@@ -48,6 +48,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "claude_dir": "",
     "language": "en",
     "default_model": "",
+    "default_model_codex": "",           # model of Codex / Cursor sessions that choose none (empty = the CLI's own default)
+    "default_model_cursor": "",
     "default_provider": "claude",       # claude | codex | cursor (sessions pick their own: meta.provider)
     "permission_mode": "bypass",          # bypass | acceptEdits | default
     # A turn that ends above this context (tokens) is followed by a summary turn and a fresh thread seeded with it

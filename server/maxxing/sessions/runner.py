@@ -272,9 +272,13 @@ class Runner:
             mode = "plan"
         if meta.get("plan_ready"):
             store.update(self.sid, plan_ready=False)
-        model = (meta.get("model") or cfg.get("default_model") or "").strip()
-        mcp_plan = mcp_auto.plan(self.sid, cfg, meta, cwd, item.get("text") or "")   # MCP servers this turn needs
         provider = providers.normalize_provider(meta.get("provider") or cfg.get("default_provider"))
+        # `default_model` names a Claude model: Codex and Cursor get their own default (`default_model_<provider>`)
+        default_model = cfg.get("default_model") if provider == providers.CLAUDE else cfg.get(f"default_model_{provider}")
+        model = (meta.get("model") or default_model or "").strip()
+        if provider == providers.CODEX and model.startswith("claude"):
+            model = ""                                  # a leftover Claude model id: Codex refuses it
+        mcp_plan = mcp_auto.plan(self.sid, cfg, meta, cwd, item.get("text") or "")   # MCP servers this turn needs
         env = spawn.claude_env(meta.get("env") or {}, mode)
         env["MAXXING_SESSION"] = self.sid               # `maxxing mcp load` run by the turn finds its session
         text = (PLAN_PREFACE if plan else "") + build_prompt(item)

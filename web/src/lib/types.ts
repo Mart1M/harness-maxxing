@@ -42,6 +42,8 @@ export type ClaudeStatus = {
   auth: { ok: boolean; method: ClaudeAuthMethod; detail: string | null; checked_at?: number | null; error?: string | null }
   default_model: string
   default_provider?: ProviderId
+  default_model_codex?: string
+  default_model_cursor?: string
   permission_mode: PermissionMode
   /** A turn ending above this context (tokens) is followed by an automatic compaction; 0 = off. */
   auto_compact_tokens: number
@@ -69,7 +71,7 @@ export type ClaudeAutoUpdate = {
 export type ClaudeAuthBody = { kind: 'oauth_token' | 'api_key'; value: string }
 export type ClaudeAuthResult = { ok: boolean; error?: string }
 export type ClaudeTestResult = { ok: boolean; model: string; ms: number; error?: string }
-export type ClaudeSettingsBody = { default_model?: string; default_provider?: ProviderId; permission_mode?: PermissionMode; auto_compact_tokens?: number; idle_compact_tokens?: number; idle_compact_after_s?: number; smart_resume_tokens?: number; protect_secrets?: boolean; short_titles?: boolean; short_titles_model?: boolean; claude_auto_update?: boolean }
+export type ClaudeSettingsBody = { default_model?: string; default_provider?: ProviderId; default_model_codex?: string; default_model_cursor?: string; permission_mode?: PermissionMode; auto_compact_tokens?: number; idle_compact_tokens?: number; idle_compact_after_s?: number; smart_resume_tokens?: number; protect_secrets?: boolean; short_titles?: boolean; short_titles_model?: boolean; claude_auto_update?: boolean }
 
 /* ---------------------------------------------------------------- Workspace */
 export type Topic = {
@@ -129,6 +131,7 @@ export type Session = {
 }
 export type ProviderId = 'claude' | 'codex' | 'cursor'
 export type ProviderInfo = { id: ProviderId; label: string; installed: boolean; path?: string | null; signed_in?: boolean | null; detail?: string; version?: string | null; /** Commands to run on the server (Codex, Cursor). */ install?: string; login?: string; key_hint?: string; /** An API key is stored for this agent (never sent back). */ key_set?: boolean }
+export type ProviderModel = { id: string; label: string; description?: string; context_window?: number | null }
 export type ProviderTestResult = { ok: boolean; ms: number; answer?: string; error?: string }
 export type ProvidersStatus = { default: ProviderId; providers: ProviderInfo[] }
 export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; /** claude | codex | cursor (default: the server's default provider). */ provider?: ProviderId; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string }

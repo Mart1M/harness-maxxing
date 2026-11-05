@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { KeyRound, PlugZap, Trash2 } from 'lucide-react'
-import { useProviderKey, useProviderKeyRemove, useProviders, useProviderTest } from '@/lib/queries'
+import { useClaudeSettings, useClaudeStatus, useProviderKey, useProviderKeyRemove, useProviderModels, useProviders, useProviderTest } from '@/lib/queries'
 import { errorMessage } from '@/lib/api'
 import type { ProviderInfo, ProviderTestResult } from '@/lib/types'
 import { useT } from '@/i18n'
-import { Badge, Button, CodeBlock, SecretInput, Skeleton, confirm } from '@/components/ui'
+import { Badge, Button, CodeBlock, FormField, SecretInput, Select, Skeleton, confirm } from '@/components/ui'
 import { Callout } from '../common'
 
 /** Codex CLI and Cursor CLI: installed? signed in? How to install, sign in or use an API key, and a real test call.
@@ -28,6 +28,11 @@ function AgentRow({ p }: { p: ProviderInfo }) {
   const test = useProviderTest()
   const save = useProviderKey()
   const remove = useProviderKeyRemove()
+  const { data: status } = useClaudeStatus()
+  const saveSettings = useClaudeSettings()
+  const { data: models = [] } = useProviderModels(p.id, p.installed)
+  const defKey = p.id === 'codex' ? 'default_model_codex' : 'default_model_cursor'
+  const def = (p.id === 'codex' ? status?.default_model_codex : status?.default_model_cursor) || ''
   const [key, setKey] = React.useState('')
   const [result, setResult] = React.useState<ProviderTestResult | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -71,6 +76,17 @@ function AgentRow({ p }: { p: ProviderInfo }) {
           <span>{t('agents.loginOnServer')}</span>
           <CodeBlock inline code={p.login} />
         </div>
+      )}
+      {ready && models.length > 0 && (
+        <FormField label={t('agents.defaultModel')} hint={t('agents.defaultModelHint')}>
+          <Select
+            value={def || '__cli__'}
+            onValueChange={(v) => saveSettings.mutate({ [defKey]: v === '__cli__' ? '' : v })}
+            options={[{ value: '__cli__', label: t('agents.cliDefault') }, ...(def && !models.some((m) => m.id === def) ? [{ value: def, label: def }] : []), ...models.map((m) => ({ value: m.id, label: m.label }))]}
+            disabled={saveSettings.isPending}
+            className="sm:max-w-sm"
+          />
+        </FormField>
       )}
       {p.installed && (
         <form onSubmit={submit} className="grid gap-2" noValidate>

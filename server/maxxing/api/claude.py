@@ -164,6 +164,8 @@ async def status():
             "auth": await asyncio.to_thread(auth_status),
             "default_model": cfg.get("default_model") or "",
             "default_provider": providers.normalize_provider(cfg.get("default_provider")),
+            "default_model_codex": cfg.get("default_model_codex") or "",
+            "default_model_cursor": cfg.get("default_model_cursor") or "",
             "permission_mode": cfg.get("permission_mode") or "bypass",
             "auto_compact_tokens": config.int_setting(cfg, "auto_compact_tokens"),
             "idle_compact_tokens": config.int_setting(cfg, "idle_compact_tokens"),
@@ -209,6 +211,8 @@ async def test():
 class SettingsIn(BaseModel):
     default_model: str | None = None
     default_provider: str | None = None
+    default_model_codex: str | None = Field(None, max_length=100)
+    default_model_cursor: str | None = Field(None, max_length=100)
     permission_mode: str | None = None
     auto_compact_tokens: int | None = Field(None, ge=0, le=2_000_000)
     idle_compact_tokens: int | None = Field(None, ge=0, le=2_000_000)
@@ -323,6 +327,12 @@ def run_provider_test(name: str) -> dict:
     return out
 
 
+@router.get("/providers/{name}/models")
+async def provider_models(name: str, force: bool = False):
+    from .. import provider_models
+    return {"models": await asyncio.to_thread(provider_models.models, _provider(name), force)}
+
+
 @router.post("/providers/{name}/test")
 async def test_provider(name: str):
     return await asyncio.to_thread(run_provider_test, _provider(name))
@@ -340,6 +350,12 @@ async def settings(body: SettingsIn):
     changes: dict = {}
     if body.default_model is not None:
         changes["default_model"] = body.default_model.strip()
+    for prov in ("codex", "cursor"):
+        v = getattr(body, f"default_model_{prov}")
+        if v is not None:
+            if v.strip() and not service._MODEL_ID.fullmatch(v.strip()):
+                raise HTTPException(400, detail={"error": "invalid", "message": "Invalid model id"})
+            changes[f"default_model_{prov}"] = v.strip()
     if body.default_provider is not None:
         if body.default_provider not in providers.PROVIDERS:
             raise HTTPException(400, detail={"error": "invalid", "message": "default_provider: " + ", ".join(providers.PROVIDERS)})

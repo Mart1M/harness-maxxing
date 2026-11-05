@@ -1,9 +1,8 @@
 // Small column widgets: model picker (shows the model that ACTUALLY answered), context gauge, state badge.
-import * as React from 'react'
 import { Bot, Check, ChevronDown, Cpu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/i18n'
-import { useClaudeStatus, useProviders } from '@/lib/queries'
+import { useClaudeStatus, useProviderModels, useProviders } from '@/lib/queries'
 import { Badge, confirm, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, StatusDot, Tooltip } from '@/components/ui'
 import type { ProviderId, ProviderInfo, Session } from '@/lib/types'
 import { contextWindow, fmtTokens, modelLabel } from './util'
@@ -51,26 +50,51 @@ export function ProviderPicker({ chosen, onChange, disabled, compact }: { chosen
   )
 }
 
-/** Codex and Cursor name their models differently from Claude: a free text, empty = the CLI's own default. */
-export function ProviderModelInput({ value, onChange, disabled, compact }: { value: string; onChange: (model: string) => void; disabled?: boolean; compact?: boolean }) {
+/** Model picker of a Codex or Cursor session: the list the CLI itself reports; empty = the agent's own default. */
+export function ProviderModelPicker({ provider, chosen, onChange, disabled, compact }: { provider: ProviderId; chosen: string; onChange: (model: string) => void; disabled?: boolean; compact?: boolean }) {
   const t = useT()
-  const [draft, setDraft] = React.useState(value)
-  React.useEffect(() => setDraft(value), [value])
-  const commit = () => draft.trim() !== value && onChange(draft.trim())
+  const { data: models = [], isLoading } = useProviderModels(provider)
+  const { data: status } = useClaudeStatus()
+  const def = (provider === 'codex' ? status?.default_model_codex : status?.default_model_cursor) || ''
+  const options = chosen && !models.some((m) => m.id === chosen) ? [...models, { id: chosen, label: chosen }] : models
+  const label = chosen ? options.find((m) => m.id === chosen)?.label || chosen : def ? options.find((m) => m.id === def)?.label || def : t('sessions.model.default')
   return (
-    <input
-      value={draft}
-      disabled={disabled}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget.blur(), undefined)}
-      placeholder={t('sessions.provider.modelPlaceholder')}
-      aria-label={t('sessions.model.label')}
-      maxLength={100}
-      autoComplete="off"
-      spellCheck={false}
-      className={cn('h-8 w-40 min-w-0 rounded-md bg-transparent px-2 text-xs text-foreground placeholder:text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10', compact && 'h-7 w-32')}
-    />
+    <DropdownMenu>
+      <Tooltip content={t('sessions.model.next', { model: label })}>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          <button
+            type="button"
+            aria-label={`${t('sessions.model.label')}: ${label}`}
+            className={cn(
+              'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10',
+              compact && 'h-7 px-1.5',
+            )}
+          >
+            <Cpu className="size-3.5 shrink-0" />
+            <span className="truncate">{label}</span>
+            <ChevronDown className="size-3 shrink-0 opacity-60" />
+          </button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent align="start" className="max-h-[60vh] w-72 overflow-y-auto">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t('sessions.model.nextTurn')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onChange('')}>
+          <span className="flex size-4 items-center justify-center">{!chosen && <Check className="!text-foreground" />}</span>
+          <span className="flex-1">{t('sessions.model.default')}</span>
+          {def && <span className="text-xs text-muted-foreground">{def}</span>}
+        </DropdownMenuItem>
+        {isLoading && <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t('sessions.provider.loading')}</DropdownMenuLabel>}
+        {!isLoading && !models.length && <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t('sessions.provider.noModels')}</DropdownMenuLabel>}
+        {options.map((m) => (
+          <DropdownMenuItem key={m.id} onSelect={() => onChange(m.id)}>
+            <span className="flex size-4 items-center justify-center">{chosen === m.id && <Check className="!text-foreground" />}</span>
+            <span className="flex-1 truncate">{m.label}</span>
+            {m.context_window ? <span className="text-xs text-muted-foreground">{fmtTokens(m.context_window)}</span> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

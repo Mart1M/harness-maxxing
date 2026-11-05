@@ -98,7 +98,7 @@ import { Composer, type ComposerHandle } from './Composer'
 import { QuotePill } from './Quote'
 import { FileMenu } from './FileMenu'
 import { ItemContext } from './Items'
-import { ContextGauge, ModelPicker, ProviderModelInput, ProviderPicker, StateBadge } from './Widgets'
+import { ContextGauge, ModelPicker, ProviderModelPicker, ProviderPicker, StateBadge } from './Widgets'
 import { absTopicDir, fileQuote, fmtCost, topicLabel } from './util'
 import { CONTENT_MIME, contentDragLeave, contentDragOver, contentDrop, useContentDrag, type Dropped } from './contentDrag'
 
@@ -832,7 +832,7 @@ export function SessionColumn({ col, sid, variant, index, count, place }: { col:
                   {(session.provider ?? 'claude') === 'claude' ? (
                     <ModelPicker chosen={session.model} real={session.real_model} contextTokens={session.context_tokens} onChange={actions.model} />
                   ) : (
-                    <ProviderModelInput value={session.model} onChange={actions.model} />
+                    <ProviderModelPicker provider={session.provider ?? 'claude'} chosen={session.model} onChange={actions.model} />
                   )}
                   {session.plan_mode && <PlanChip session={session} />}
                 </>
@@ -1351,7 +1351,7 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
               <span className="text-sm font-medium">{t('sessions.model.label')}</span>
               <div className="flex flex-wrap items-center gap-1">
                 <ProviderPicker chosen={provider} onChange={(p) => { setProviderChoice(p); setModel('') }} />
-                {provider === 'claude' ? <ModelPicker chosen={model} onChange={setModel} /> : <ProviderModelInput value={model} onChange={setModel} />}
+                {provider === 'claude' ? <ModelPicker chosen={model} onChange={setModel} /> : <ProviderModelPicker provider={provider} chosen={model} onChange={setModel} />}
               </div>
             </div>
             <label htmlFor={`plan-${col.key}`} className="flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 has-[:checked]:border-primary/50 has-[:checked]:bg-primary/[0.06]">

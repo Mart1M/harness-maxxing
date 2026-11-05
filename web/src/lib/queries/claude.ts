@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok, ProviderTestResult, ProvidersStatus } from '../types'
+import type { ClaudeAuthBody, ClaudeAuthResult, ClaudeSettingsBody, ClaudeStatus, ClaudeTestResult, Ok, ProviderModel, ProviderTestResult, ProvidersStatus } from '../types'
 import { qk } from './keys'
 import { useMut } from './util'
 
@@ -12,6 +12,11 @@ export function useClaudeStatus() {
 /** Which agent CLIs (Claude Code, Codex, Cursor) are installed and signed in on this server. */
 export function useProviders() {
   return useQuery({ queryKey: qk.providers, queryFn: () => api.get<ProvidersStatus>('/api/claude/providers'), staleTime: 30_000 })
+}
+
+/** Models a Codex / Cursor session can use (read from the CLI on the server). */
+export function useProviderModels(id: string, enabled = true) {
+  return useQuery({ queryKey: qk.providerModels(id), queryFn: () => api.get<{ models: ProviderModel[] }>(`/api/claude/providers/${id}/models`).then((r) => r.models), enabled: enabled && id !== 'claude', staleTime: 5 * 60_000 })
 }
 
 export function useProviderKey() {

@@ -224,3 +224,43 @@ def test_usage_endpoint_counts_tokens_by_agent(client, topic, agents, monkeypatc
     assert u["codex"]["available"] is False and u["cursor"]["available"] is False       # no plan limits readable
     assert u["codex"]["tokens"]["today"] == 145 and u["codex"]["tokens"]["week"] == 145     # 100 + 5 + 40
     assert u["cursor"]["tokens"]["today"] == 145
+
+
+def test_the_claude_default_model_is_never_sent_to_codex_or_cursor(client, topic, agents):
+    assert client.put("/api/claude/settings", json={"default_model": "claude-sonnet-5-5"}).status_code == 200
+    for provider, dirname in (("codex", "fc"), ("cursor", "fu")):
+        sid = client.post("/api/sessions", json={"path": topic, "message": "hi", "provider": provider}).json()["id"]
+        s = wait_idle(client, sid)
+        assert s["error"] is None, s
+        argv = _calls(agents["tmp"] / dirname)[-1]["argv"]
+        assert "claude-sonnet-5-5" not in argv and "-m" not in argv and "--model" not in argv
+    # a default of their own is used, and a model chosen in the session wins over it
+    assert client.put("/api/claude/settings", json={"default_model_codex": "gpt-x"}).status_code == 200
+    sid = client.post("/api/sessions", json={"path": topic, "message": "hi", "provider": "codex"}).json()["id"]
+    wait_idle(client, sid)
+    argv = _calls(agents["tmp"] / "fc")[-1]["argv"]
+    assert argv[argv.index("-m") + 1] == "gpt-x"
+    client.patch(f"/api/sessions/{sid}", json={"model": "gpt-y"})
+    client.post(f"/api/sessions/{sid}/messages", json={"text": "again"})
+    wait_idle(client, sid)
+    argv = _calls(agents["tmp"] / "fc")[-1]["argv"]
+    assert argv[argv.index("-m") + 1] == "gpt-y"
+    assert client.put("/api/claude/settings", json={"default_model_codex": "bad model"}).status_code == 400
+
+
+def test_model_lists_of_codex_and_cursor(client, agents, tmp_path, monkeypatch):
+    from maxxing import provider_models
+    home = tmp_path / "codex-home"
+    home.mkdir()
+    (home / "models_cache.json").write_text(json.dumps({"models": [
+        {"slug": "gpt-b", "display_name": "GPT B", "visibility": "list", "priority": 2, "context_window": 1000},
+        {"slug": "gpt-a", "display_name": "GPT A", "visibility": "list", "priority": 1},
+        {"slug": "internal", "visibility": "hide", "priority": 0}]}))
+    monkeypatch.setenv("CODEX_HOME", str(home))
+    provider_models._cache.clear()
+    got = client.get("/api/claude/providers/codex/models", params={"force": "true"}).json()["models"]
+    assert [m["id"] for m in got] == ["gpt-a", "gpt-b"] and got[1]["context_window"] == 1000
+    assert client.get("/api/claude/providers/claude/models").status_code == 404
+    lines = "Available models\n\nauto - Auto (current, default)\ngpt-5.3-codex-high - Codex 5.3 High\n"
+    ids = [(m["id"], m["label"]) for m in provider_models._cursor_models_from(lines)]
+    assert ids == [("auto", "Auto"), ("gpt-5.3-codex-high", "Codex 5.3 High")]
