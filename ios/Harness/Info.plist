@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Harness</string>
+	<string>WuitBot</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -30,13 +30,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Take a photo to send it in a Harness conversation.</string>
+	<string>Take a photo to send it in a WuitBot conversation.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Reach a Harness server on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Record voice messages for Harness.</string>
+	<string>Record voice messages for WuitBot.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Save images from Harness to your photos.</string>
+	<string>Save images from WuitBot to your photos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

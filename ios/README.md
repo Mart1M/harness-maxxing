@@ -1,4 +1,7 @@
-# Harness for iOS
+# WuitBot (Harness for iOS)
+
+The app is called **WuitBot** on the home screen (`CFBundleDisplayName` in `Harness/Info.plist`); the Xcode project and
+target keep the name Harness.
 
 A small native app (SwiftUI + `WKWebView`) that opens your Harness server full screen. It exists so you can install
 Harness from **TestFlight** like any app: a PWA cannot be uploaded to App Store Connect, a native app that shows it can.

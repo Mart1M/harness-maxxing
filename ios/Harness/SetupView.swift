@@ -13,7 +13,7 @@ struct SetupView: View {
             Image(systemName: "terminal")
                 .font(.system(size: 40, weight: .semibold))
                 .foregroundStyle(.tint)
-            Text("Harness")
+            Text("WuitBot")
                 .font(.largeTitle.bold())
             Text("Enter the address of your Harness server. You sign in on the next screen, with the password you chose at setup.")
                 .foregroundStyle(.secondary)
