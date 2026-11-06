@@ -32,12 +32,14 @@ Or open `Harness.xcodeproj` in Xcode and press Run. An HTTP address is accepted 
 
 You need an Apple Developer Program membership (99 USD/year) and Xcode 15 or later on a Mac.
 
-1. **Bundle identifier.** In Xcode, open the project, select the *Harness* target -> *Signing & Capabilities*.
-   Replace `com.example.harnessmaxxing` with an identifier of yours (`com.yourname.harness`) and pick your *Team*.
-   Automatic signing creates the certificates and the App ID.
-2. **App record.** On [App Store Connect](https://appstoreconnect.apple.com) -> *Apps* -> *+* -> *New App*: iOS, any
+1. **Bundle identifier and team.** Copy nothing into the project: create `ios/Local.xcconfig` (ignored by git) with
+   `PRODUCT_BUNDLE_IDENTIFIER = com.yourname.wuitbot` and `DEVELOPMENT_TEAM = <your team id>` (`Config.xcconfig` lists
+   the settings it overrides). Register that identifier as an App ID on developer.apple.com (or let Xcode's automatic
+   signing do it).
+2. **App record.** On [App Store Connect](https://appstoreconnect.apple.com) -> *Apps* -> *+* -> *New App*: iOS, the
    name, the same bundle identifier, any SKU.
-3. **Archive.** In Xcode choose *Any iOS Device (arm64)* as destination, then *Product -> Archive*.
+3. **Archive.** From a terminal: `xcodebuild -project Harness.xcodeproj -scheme Harness -configuration Release
+   -destination 'generic/platform=iOS' -archivePath build/WuitBot.xcarchive -allowProvisioningUpdates archive`; or in Xcode choose *Any iOS Device (arm64)* as destination, then *Product -> Archive*.
 4. **Upload.** In the Organizer window select the archive -> *Distribute App* -> *App Store Connect* -> *Upload*.
    Processing takes a few minutes; an email tells you when the build is ready.
 5. **Test.** In App Store Connect -> your app -> *TestFlight*: add yourself under *Internal Testing* (people of your

@@ -14,3 +14,4 @@ ios/build/
 ios/DerivedData/
 *.xcuserstate
 xcuserdata/
+ios/Local.xcconfig

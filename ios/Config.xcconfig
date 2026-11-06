@@ -1,0 +1,9 @@
+// Build settings that depend on who builds the app. Put your own values in ios/Local.xcconfig (ignored by git):
+//
+//   PRODUCT_BUNDLE_IDENTIFIER = com.yourname.wuitbot
+//   DEVELOPMENT_TEAM = ABCDE12345
+//
+PRODUCT_BUNDLE_IDENTIFIER = com.example.harnessmaxxing
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
