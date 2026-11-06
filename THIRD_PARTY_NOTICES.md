@@ -6,6 +6,7 @@ here with its copyright notice. Harness Maxxing itself is under the [LICENSE](LI
 - **JavaScript**: bundled into the web interface (`web/dist`), fonts included (SIL Open Font License 1.1).
 - **Python**: installed from PyPI into the server's virtual environment by the installer and `maxxing update`.
 - **Go**: compiled into the optional PC agent (`pc-agent/`).
+- **Artwork**: the rabbit head of the logo and the iOS app icon (`ios/tools/otc_body.png`), adapted from GrokBot (BSD-3-Clause, below).
 
 Tools the installer downloads from their publishers (Claude Code, uv, Python, Node.js, Caddy, Chromium, ...)
 are not part of this list: they come with their own licenses.
@@ -10809,3 +10810,40 @@ Their license is named above; the full text is at the link:
 - [tokenizers 0.23.3](https://pypi.org/project/tokenizers/0.23.3/) - Apache-2.0
 - [github.com/coder/websocket v1.8.15](https://pkg.go.dev/github.com/coder/websocket@v1.8.15?tab=licenses) - ISC
 - [golang.org/x/sys v0.49.0](https://pkg.go.dev/golang.org/x/sys@v0.49.0?tab=licenses) - BSD-3-Clause
+
+## Artwork
+
+The rabbit head (`ios/tools/otc_body.png`, used for the logo, the web icons and the iOS app icon) is the Otc
+artwork of GrokBot, adapted, under the BSD 3-Clause License:
+
+```text
+BSD 3-Clause License
+
+Copyright (c) 2026, nasawz
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```

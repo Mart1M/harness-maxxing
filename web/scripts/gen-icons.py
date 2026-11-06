@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate every logo file from one vector drawing, for each accent color.
+"""Generate every logo file (the rabbit head on the accent color), for each accent color.
 
 Run from anywhere: `uv run --with playwright python web/scripts/gen-icons.py` (the PNGs are rendered by Chromium;
 set MX_CHROMIUM to a Chromium / chrome-headless-shell binary to skip `playwright install`). Outputs are committed,
@@ -15,11 +15,14 @@ public/manifest-<accent>.webmanifest        the web app manifest pointing at tha
 The blue files are also written under the historical names (icon-192.png, icon-512.png, icon-maskable-512.png,
 apple-touch-icon.png, favicon.svg, manifest.webmanifest) - the defaults before any accent is known.
 """
+import base64
 import colorsys
+import io
 import json
 import os
 from pathlib import Path
 
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 WEB = Path(__file__).resolve().parent.parent
@@ -48,29 +51,51 @@ def stops(accent: str) -> list[str]:
     return out
 
 
-def svg(accent: str, *, size: int | None = None, rounded: bool = True, scale: float = 1.0) -> str:
-    """The logo on a 512 grid. `rounded`: transparent corners (else full bleed); `scale` shrinks the drawing
-    around the center (maskable safe zone)."""
-    c0, c1 = stops(accent)
+RABBIT_SRC = WEB.parent / "ios" / "tools" / "otc_body.png"   # white rabbit head, see THIRD_PARTY_NOTICES.md
+RABBIT_H, RABBIT_W = 330, 330 * 768 / 916                    # its size on the 512 grid
+_rabbit: dict[int, str] = {}
+
+
+def rabbit_uri(height: int) -> str:
+    """The rabbit as a PNG data URI `height` px tall (small for the vector logo file, large for the raster icons)."""
+    if height not in _rabbit:
+        im = Image.open(RABBIT_SRC).convert("RGBA")
+        im = im.resize((round(im.width * height / im.height), height), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "PNG", optimize=True)
+        _rabbit[height] = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+    return _rabbit[height]
+
+
+def background(accent: str) -> tuple[str, str]:
+    """Top and bottom of the tile: the accent, darkened towards the bottom so the white head stands out."""
+    h, light, sat = _hue(tuple(round(int(stops(accent)[0][i:i + 2], 16)) for i in (1, 3, 5)))
+    out = []
+    for k in (0.94, 0.66):
+        r, g, b = colorsys.hls_to_rgb(h, light * k, sat)
+        out.append("#%02x%02x%02x" % (round(r * 255), round(g * 255), round(b * 255)))
+    return out[0], out[1]
+
+
+def svg(accent: str, *, size: int | None = None, rounded: bool = True, scale: float = 1.0, embed: int = 160) -> str:
+    """The logo on a 512 grid: the rabbit head on the accent color. `rounded`: transparent corners (else full bleed);
+    `scale` shrinks the drawing around the center (maskable safe zone); `embed`: pixel height of the embedded head."""
+    c0, c1 = background(accent)
     rx = RADIUS if rounded else 0
     wh = f' width="{size}" height="{size}"' if size else ""
     t = 256 * (1 - scale)
+    x, y = (512 - RABBIT_W) / 2, (512 - RABBIT_H) / 2 + 14
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"{wh}>'
-        f'<defs><linearGradient id="g" x1="40" y1="96" x2="470" y2="414" gradientUnits="userSpaceOnUse">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"{wh}>'
+        f'<defs><linearGradient id="g" x1="0" y1="0" x2="120" y2="512" gradientUnits="userSpaceOnUse">'
         f'<stop offset="0" stop-color="{c0}"/><stop offset="1" stop-color="{c1}"/></linearGradient>'
+        '<filter id="s" x="-20%" y="-20%" width="140%" height="150%">'
+        '<feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#06143c" flood-opacity=".4"/></filter>'
         f'<clipPath id="c"><rect width="512" height="512" rx="{rx}"/></clipPath></defs>'
-        f'<g clip-path="url(#c)"><rect width="512" height="512" fill="{PAPER}"/>'
+        f'<g clip-path="url(#c)"><rect width="512" height="512" fill="url(#g)"/>'
         f'<g transform="translate({t:g} {t:g}) scale({scale:g})">'
-        # body: head, arms, belly, four legs
-        '<path fill="url(#g)" d="M110 96H394V178H468V240H394V414H350V336H314V414H270V336H234V414H190V336H154V414H110'
-        'V240H36V178H110Z"/>'
-        f'<rect x="151" y="136" width="38" height="38" fill="{INK}"/><rect x="315" y="136" width="38" height="38" fill="{INK}"/>'
-        # collar, its buckle and the leash going off the top-right corner
-        f'<path d="M110 243Q246 264 380 232" fill="none" stroke="{INK}" stroke-width="15"/>'
-        f'<path d="M384 227Q452 168 540 86" fill="none" stroke="{INK}" stroke-width="9" stroke-linecap="round"/>'
-        f'<rect x="-9" y="-12" width="18" height="24" rx="5" fill="none" stroke="{METAL}" stroke-width="4"'
-        ' transform="translate(381 231) rotate(-32)"/>'
+        f'<image x="{x:g}" y="{y:g}" width="{RABBIT_W:g}" height="{RABBIT_H}" filter="url(#s)" '
+        f'xlink:href="{rabbit_uri(embed)}"/>'
         "</g></g></svg>"
     )
 
@@ -102,11 +127,11 @@ def main():
         for a in ACCENT_BODY:
             (ICONS / f"logo-{a}.svg").write_text(svg(a) + "\n")
             for size in (64, 128):
-                png(svg(a, size=size), size, ICONS / f"logo-{a}-{size}.png")
+                png(svg(a, size=size, embed=300), size, ICONS / f"logo-{a}-{size}.png")
             for size in (192, 512):
-                png(svg(a, size=size), size, ICONS / f"icon-{a}-{size}.png")
-            png(svg(a, size=512, rounded=False, scale=0.78), 512, ICONS / f"icon-maskable-{a}-512.png")
-            png(svg(a, size=180, rounded=False, scale=0.94), 180, ICONS / f"apple-touch-icon-{a}.png")
+                png(svg(a, size=size, embed=700), size, ICONS / f"icon-{a}-{size}.png")
+            png(svg(a, size=512, rounded=False, scale=0.78, embed=700), 512, ICONS / f"icon-maskable-{a}-512.png")
+            png(svg(a, size=180, rounded=False, scale=0.94, embed=500), 180, ICONS / f"apple-touch-icon-{a}.png")
             (PUBLIC / f"manifest-{a}.webmanifest").write_text(json.dumps(manifest(a), indent=2, ensure_ascii=False) + "\n")
             print("wrote", a)
         browser.close()
