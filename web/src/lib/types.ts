@@ -816,3 +816,26 @@ export type InfraView = {
   servers: { name: string; label?: string; host: string; user: string; port: number; note: string }[]
   refresh_min?: number
 }
+
+/** A command running in a repository (page /process). */
+export type ProcessInfo = {
+  id: string
+  name: string
+  repo: string
+  command: string
+  port: number
+  created: number | null
+  started_at: number | null
+  state: 'running' | 'stopped' | 'failed' | 'unknown'
+  pid: number | null
+  memory_mb: number | null
+  cpu_pct: number | null
+  uptime_s: number | null
+  /** Password-protected URL, once published. */
+  url: string | null
+  mode: 'path' | 'host' | null
+  published: boolean
+  auth_user: string | null
+}
+export type ProcessCreateBody = { name: string; repo: string; command: string; port?: number; start?: boolean }
+export type ProcessCredentials = { url: string; user: string; password: string }

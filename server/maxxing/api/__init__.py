@@ -36,6 +36,7 @@ ROUTERS = [
     "git",
     "mcp",
     "infra",
+    "processes",
     "team",
     "teampeer",
 ]

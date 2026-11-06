@@ -25,7 +25,7 @@ NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}\Z")
 HOST_RE = re.compile(r"^(?=.{1,253}\Z)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\Z")
 SANDBOX = "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
 UI_ROUTES = {"api", "ext", "x", "git", "infra", "tasks", "settings", "sessions", "files", "docs", "feed", "crons", "login",
-             "setup", "welcome", "hud", "solo", "abs", "assets", "icons", "stream", "hooks", "health", "index.html"}
+             "setup", "welcome", "process", "hud", "solo", "abs", "assets", "icons", "stream", "hooks", "health", "index.html"}
 HEADER = "# maxxing-site"
 
 
@@ -152,8 +152,26 @@ HARNESS_SET_COOKIE_RE = r"^[ \t]*" + HARNESS_COOKIE_NAME + r"[ \t]*=.*$"
 SAFE_PATH_RE = re.compile(r"^[A-Za-z0-9_./-]+$")      # written as is in a Caddy file: no space, quote, newline
 
 
-def _block(name: str, root: str | None, port: int | None, upstream_host: str | None, keep_prefix: bool, sandbox: bool) -> str:
+def hash_password(password: str) -> str:
+    """bcrypt hash for `basic_auth` (Caddy's own `hash-password`)."""
+    binary = os.environ.get("MAXXING_CADDY_BIN", "caddy")
+    try:
+        r = subprocess.run([binary, "hash-password", "--plaintext", password], capture_output=True, text=True, timeout=30)
+    except FileNotFoundError:
+        raise CaddyError("Caddy is not installed on this server", "no_caddy") from None
+    except subprocess.TimeoutExpired:
+        raise CaddyError("caddy took too long to hash the password", "caddy_error") from None
+    h = r.stdout.strip()
+    if r.returncode != 0 or not re.fullmatch(r"\$[0-9a-z]{2}\$[A-Za-z0-9./$]{20,}", h):
+        raise CaddyError("Caddy could not hash the password", "caddy_error")
+    return h
+
+
+def _block(name: str, root: str | None, port: int | None, upstream_host: str | None, keep_prefix: bool, sandbox: bool,
+           auth: tuple[str, str] | None = None) -> str:
     inner = []
+    if auth:                                                  # (user, bcrypt hash): every request needs it
+        inner.append("basic_auth {\n\t\t" + auth[0] + " " + auth[1] + "\n\t}")
     if sandbox:
         inner += [f'header Content-Security-Policy "{SANDBOX}"', 'header Access-Control-Allow-Origin "*"']
     if root:
@@ -182,7 +200,7 @@ def check_name(name: str, project: str | None = None) -> None:
 
 def add_site(name: str, root: str | None = None, port: int | None = None, host: str | None = None,
              project: str | None = None, keep_prefix: bool = False, upstream_host: str | None = None,
-             kind: str = "site") -> dict:
+             kind: str = "site", basic_auth: tuple[str, str] | None = None) -> dict:
     """Create a path site (no host) or a host site. Returns {name, url, file, mode}."""
     check_name(name, project)
     if bool(root) == bool(port):
@@ -202,6 +220,7 @@ def add_site(name: str, root: str | None = None, port: int | None = None, host: 
         root = str(rp)
     if port is not None and not 1 <= int(port) <= 65535:
         raise CaddyError("invalid port", "invalid_target")
+    auth = (basic_auth[0], hash_password(basic_auth[1])) if basic_auth else None
     cfg = config.load_config()
     from .build import harness_host
     hh = harness_host(cfg.get("public_url"))
@@ -218,7 +237,7 @@ def add_site(name: str, root: str | None = None, port: int | None = None, host: 
         directive = "handle" if keep_prefix and port else "handle_path"
         text = (f"{meta}\n# written by `maxxing infra site add` - remove with `maxxing infra site remove {name}`\n"
                 f"redir /{name} /{name}/ 308\n{directive} /{name}/* {{\n"
-                f"{_block(name, root, port, upstream_host, keep_prefix, True)}\n}}\n")
+                f"{_block(name, root, port, upstream_host, keep_prefix, True, auth)}\n}}\n")
         imp = f"import {paths_dir()}/*.caddy"
         changes = {f: text, harness_site(): _with_import(harness_site().read_text(), imp, "reverse_proxy")}
         url = f"https://{hh}/{name}/"
@@ -234,7 +253,7 @@ def add_site(name: str, root: str | None = None, port: int | None = None, host: 
             raise CaddyError(f"{host} is already served by the Caddy configuration", "taken")
         f = sites_dir() / f"{name}.caddy"
         text = (f"{meta}\n# written by `maxxing infra site add` - remove with `maxxing infra site remove {name}`\n"
-                f"{host} {{\n\tencode zstd gzip\n{_block(name, root, port, upstream_host, False, False)}\n}}\n")
+                f"{host} {{\n\tencode zstd gzip\n{_block(name, root, port, upstream_host, False, False, auth)}\n}}\n")
         imp = f"import {sites_dir()}/*.caddy"
         cf_text = caddyfile().read_text() if caddyfile().exists() else ""
         changes = {f: text, caddyfile(): _with_import(cf_text, imp, None)}

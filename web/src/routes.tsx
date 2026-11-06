@@ -46,6 +46,7 @@ export const routes: RouteObject[] = [
           { path: 'files/*', lazy: page(() => import('./pages/files'), ['files', 'media']) },
           { path: 'tasks/*', lazy: page(() => import('./pages/tasks'), ['tasks']) },
           { path: 'crons/*', lazy: page(() => import('./pages/crons'), ['tasks']) },
+          { path: 'process', lazy: page(() => import('./features/processes/ProcessPage')) },
           { path: 'feed', lazy: page(() => import('./pages/feed')) },
           // Optional feature pages (Settings -> Features)
           { path: 'git', lazy: page(() => import('./features/git/GitPage'), ['git']) },

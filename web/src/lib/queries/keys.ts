@@ -6,6 +6,8 @@ export const qk = {
   authState: ['auth', 'state'] as const,
   onboarding: ['onboarding'] as const,
   claude: ['claude', 'status'] as const,
+  processes: ['processes'] as const,
+  processLogs: (name: string) => ['processes', name, 'logs'] as const,
   providers: ['claude', 'providers'] as const,
   providerModels: (id: string) => ['claude', 'providers', id, 'models'] as const,
   workspace: ['workspace', 'tree'] as const,
