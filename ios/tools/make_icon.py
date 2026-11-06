@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE.parent / "Harness" / "Assets.xcassets" / "AppIcon.appiconset" / "icon-1024.png"
 SIZE = 1024
 TOP, BOTTOM = (27, 98, 253), (2, 62, 195)            # the blue of the web logo (web/scripts/gen-icons.py)
-SHIFT_LEFT = 32                                      # moved left of the center (same 3 % as the web icons)
+HEAD_CX = 300 / 768                                  # the face (not the ears) is centred: x of its centre / image width
 HEAD_HEIGHT = 690                                    # the head fills about two thirds of the icon
 
 def gradient() -> Image.Image:
@@ -30,7 +30,7 @@ def main() -> None:
     head = Image.open(HERE / "rabbit_logo.png").convert("RGBA")
     scale = HEAD_HEIGHT / head.height
     head = head.resize((round(head.width * scale), HEAD_HEIGHT), Image.LANCZOS)
-    x, y = (SIZE - head.width) // 2 - SHIFT_LEFT, (SIZE - head.height) // 2 + 20
+    x, y = round(SIZE / 2 - HEAD_CX * head.width), (SIZE - head.height) // 2 + 20
     canvas = gradient().convert("RGBA")
     shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     mask = Image.new("L", canvas.size, 0)
