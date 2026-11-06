@@ -9,12 +9,15 @@ export const ACCENT_HEX: Record<'light' | 'dark', Record<Accent, string>> = {
 
 /** The product logo in the accent color, vector (public/icons/logo-<accent>.svg - sharp at any size; made by
  *  web/scripts/gen-icons.py with the PNG versions). */
-export const logoSrc = (accent: Accent) => `/icons/logo-${ACCENT_HEX.dark[accent] ? accent : 'blue'}.svg`
+export const logoSrc = (accent: Accent) => `/icons/logo-${ACCENT_HEX.dark[accent] ? accent : 'blue'}.svg${ICON_V}`
+
+/** Icons are cached for a week (and by the service worker): change this when the artwork changes. */
+export const ICON_V = '?v=rabbit'
 
 const known = (accent: Accent) => (ACCENT_HEX.dark[accent] ? accent : 'blue')
 
 /** App icon in the accent color (installed app, notifications): public/icons/icon-<accent>-192.png. */
-export const appIconSrc = (accent: Accent) => `/icons/icon-${known(accent)}-192.png`
+export const appIconSrc = (accent: Accent) => `/icons/icon-${known(accent)}-192.png${ICON_V}`
 
 function setLink(rel: string, href: string, type?: string) {
   let link = document.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`)
@@ -34,5 +37,5 @@ function setLink(rel: string, href: string, type?: string) {
 export function applyFavicon(accent: Accent) {
   setLink('icon', logoSrc(accent), 'image/svg+xml')
   setLink('manifest', `/manifest-${known(accent)}.webmanifest`)
-  setLink('apple-touch-icon', `/icons/apple-touch-icon-${known(accent)}.png`)
+  setLink('apple-touch-icon', `/icons/apple-touch-icon-${known(accent)}.png${ICON_V}`)
 }
