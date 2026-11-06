@@ -51,8 +51,9 @@ def stops(accent: str) -> list[str]:
     return out
 
 
-RABBIT_SRC = WEB.parent / "ios" / "tools" / "otc_body.png"   # white rabbit head, see THIRD_PARTY_NOTICES.md
+RABBIT_SRC = WEB.parent / "ios" / "tools" / "rabbit_logo.png"   # white rabbit head, see THIRD_PARTY_NOTICES.md
 RABBIT_H, RABBIT_W = 330, 330 * 768 / 916                    # its size on the 512 grid
+SHIFT_LEFT = 16                                              # moved left of the center, on the 512 grid
 _rabbit: dict[int, str] = {}
 
 
@@ -84,7 +85,7 @@ def svg(accent: str, *, size: int | None = None, rounded: bool = True, scale: fl
     rx = RADIUS if rounded else 0
     wh = f' width="{size}" height="{size}"' if size else ""
     t = 256 * (1 - scale)
-    x, y = (512 - RABBIT_W) / 2, (512 - RABBIT_H) / 2 + 14
+    x, y = (512 - RABBIT_W) / 2 - SHIFT_LEFT, (512 - RABBIT_H) / 2 + 14
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"{wh}>'
         f'<defs><linearGradient id="g" x1="0" y1="0" x2="120" y2="512" gradientUnits="userSpaceOnUse">'
