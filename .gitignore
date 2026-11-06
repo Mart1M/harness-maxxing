@@ -8,3 +8,9 @@ node_modules
 .DS_Store
 web/test-results/
 web/playwright-report/
+
+# iOS app
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
