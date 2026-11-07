@@ -1,6 +1,7 @@
 """Authenticated Bash console, rooted in the configured workspace."""
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import os
 import signal
@@ -65,4 +66,5 @@ def _run(command: str) -> dict:
 async def run(body: CommandIn):
     if not body.command.strip():
         raise HTTPException(422, detail={"error": "invalid_command", "message": "Enter a command"})
-    return _run(body.command)
+    # Bash may run for up to TIMEOUT_S. Keep the ASGI event loop free so the rest of the app stays responsive.
+    return await asyncio.to_thread(_run, body.command)

@@ -16,3 +16,17 @@ def test_terminal_validation_and_timeout(client, monkeypatch):
     r = client.post("/api/terminal/run", json={"command": "sleep 1"})
     assert r.status_code == 200
     assert r.json()["timed_out"] is True and r.json()["code"] == 124
+
+
+def test_terminal_does_not_block_other_requests(client):
+    """The command runs in a worker: the ASGI loop can still serve a health request."""
+    import threading
+    import time
+
+    response = []
+    thread = threading.Thread(target=lambda: response.append(client.post("/api/terminal/run", json={"command": "sleep 0.2"})))
+    thread.start()
+    time.sleep(0.03)
+    assert client.get("/api/auth/state").status_code == 200
+    thread.join()
+    assert response[0].status_code == 200
