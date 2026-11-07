@@ -20,7 +20,7 @@ import { QuotedFile } from './QuotedFile'
 import { SendToDialog, SendToSub, type SendTarget } from '@/features/team/SendTo'
 import { gripRef } from './contentDrag'
 import { authServerOf, McpAuthButton } from '@/features/mcp/AuthButton'
-import { audioPaths, baseName, diffStats, FILE_HREF, fileHrefPath, fmtCost, fmtMs, fmtTokens, isAudio, isImage, isVideo, lineDiff, linkifyMarkdown, mediaPaths, modelLabel, quotedFile, relPath, relPaths, splitQuotes, toolIcon, type DiffLine } from './util'
+import { audioPaths, baseName, diffStats, FILE_HREF, fileHrefPath, fmtCost, fmtMs, fmtTokens, isAudio, isImage, isVideo, lineDiff, linkifyMarkdown, markdownFilePath, mediaPaths, modelLabel, quotedFile, relPath, relPaths, splitQuotes, toolIcon, type DiffLine } from './util'
 
 export type ItemCtx = {
   filesRoot: string | null
@@ -482,7 +482,7 @@ export const AssistantMessage = React.memo(function AssistantMessage({ text, onF
   const audio = React.useMemo(() => audioPaths(text, filesRoot), [text, filesRoot])
   const onLink = React.useCallback(
     (href: string) => {
-      const p = href.startsWith(FILE_HREF) ? fileHrefPath(href) : null
+      const p = href.startsWith(FILE_HREF) ? fileHrefPath(href) : markdownFilePath(href, filesRoot)
       return p === null ? null : () => open(p)
     },
     [open],

@@ -13,6 +13,8 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
   The editor fetches the selected provider's model catalogue. Added API and execution tests.
 - `pageData.Q` accepts function-based `staleTime` values returned by query factories. The production web bundle is
   rebuilt, including the CRON provider selector.
+- Assistant-message links now recognize same-origin absolute URLs whose pathname is inside `files_root`, so explicit
+  Markdown links open the file viewer rather than the SPA route. Malformed or off-workspace URLs remain ordinary links.
 
 ## 2.0.0-alpha.118 - 2026-11-05
 

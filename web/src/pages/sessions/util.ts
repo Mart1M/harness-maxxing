@@ -193,6 +193,30 @@ export function linkifyMarkdown(md: string, root: string | null | undefined): st
     .join('')
 }
 
+/** A file link written explicitly in Markdown. Same-origin absolute URLs and `/absolute/paths` inside the
+ * workspace are opened in the file viewer rather than being treated as app routes. */
+export function markdownFilePath(href: string, root: string | null | undefined): string | null {
+  if (!root) return null
+  const base = root.replace(/\/+$/, '') || '/'
+  let path = href
+  if (/^https?:\/\//i.test(href)) {
+    try {
+      const url = new URL(href)
+      if (url.origin !== location.origin) return null
+      path = decodeURIComponent(url.pathname)
+    } catch {
+      return null
+    }
+  }
+  if (!path.startsWith('/')) return null
+  try {
+    path = decodeURIComponent(path)
+  } catch {
+    return null
+  }
+  return base === '/' || path === base || path.startsWith(base + '/') ? path : null
+}
+
 /** Media paths mentioned in a text: images and videos (inline thumbnails), audio (inline players). */
 export function mediaPaths(text: string, root: string | null | undefined, max = 6): string[] {
   return pathsOf(text, root, (p) => isImage(p) || isVideo(p), max)

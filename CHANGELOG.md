@@ -8,6 +8,9 @@ All notable changes to Harness Maxxing. Versions follow semantic versioning.
 New:
 - **Scheduled jobs can choose their AI agent.** Select Claude Code, Codex CLI or Cursor CLI when creating or editing a prompt job; its model list follows the selected agent.
 
+Fixes:
+- **File links in answers open again.** A full URL pointing to a file in your workspace now opens the file viewer instead of a missing app page.
+
 ## 2.0.0-alpha.118 - 2026-11-05
 
 Fixes:
