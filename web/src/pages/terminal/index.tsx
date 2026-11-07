@@ -1,8 +1,6 @@
 // Terminal page: an authenticated Bash command console rooted in the configured workspace.
 import * as React from 'react'
-import { Play, SquareTerminal } from 'lucide-react'
 import { Page } from '@/components/shell/Page'
-import { Button, Textarea } from '@/components/ui'
 import { api, errorMessage } from '@/lib/api'
 import { useT } from '@/i18n'
 
@@ -14,7 +12,7 @@ export default function TerminalPage() {
   const [command, setCommand] = React.useState('')
   const [entries, setEntries] = React.useState<Entry[]>([])
   const [running, setRunning] = React.useState(false)
-  const input = React.useRef<HTMLTextAreaElement | null>(null)
+  const input = React.useRef<HTMLInputElement | null>(null)
 
   const run = async () => {
     const value = command.trim()
@@ -38,7 +36,11 @@ export default function TerminalPage() {
     <Page title={t('terminal.title')} description={t('terminal.description')} width="wide" bodyClassName="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t('terminal.warning')}</p>
-        <div className="min-h-[18rem] flex-1 overflow-auto rounded-xl border bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 shadow-xs dark:bg-black" aria-live="polite">
+        <div
+          className="min-h-[18rem] flex-1 cursor-text overflow-auto rounded-xl border bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 shadow-xs dark:bg-black"
+          aria-live="polite"
+          onClick={() => input.current?.focus()}
+        >
           {entries.length === 0 && <span className="text-zinc-500">{t('terminal.empty')}</span>}
           {entries.map((entry, i) => (
             <div key={i} className="mb-5 last:mb-0">
@@ -56,26 +58,23 @@ export default function TerminalPage() {
               {!entry.result && !entry.error && <span className="text-zinc-500">{t('terminal.running')}</span>}
             </div>
           ))}
-        </div>
-        <div className="rounded-xl border bg-card p-2 shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/20">
-          <Textarea
+          <form
+            className="flex items-center gap-2 text-emerald-400"
+            onSubmit={(e) => { e.preventDefault(); void run() }}
+          >
+            <span aria-hidden="true">$</span>
+            <input
             ref={input}
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void run() } }}
             placeholder={t('terminal.placeholder')}
             aria-label={t('terminal.input')}
-            minRows={2}
-            maxRows={8}
-            className="border-0 bg-transparent font-mono shadow-none focus-visible:ring-0 dark:bg-transparent"
+            className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none placeholder:text-zinc-600"
             disabled={running}
+            autoFocus
           />
-          <div className="flex items-center justify-between gap-3 px-1 pt-1">
-            <span className="text-xs text-muted-foreground">{t('terminal.hint')}</span>
-            <Button onClick={() => void run()} disabled={!command.trim()} loading={running} className="gap-1.5">
-              {running ? <SquareTerminal /> : <Play />} {t('terminal.run')}
-            </Button>
-          </div>
+            <span className="shrink-0 text-[11px] text-zinc-600">{running ? t('terminal.running') : t('terminal.hint')}</span>
+          </form>
         </div>
       </div>
     </Page>

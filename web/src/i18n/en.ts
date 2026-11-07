@@ -71,7 +71,7 @@ export const en = {
   'terminal.empty': 'Ready for a Bash command.',
   'terminal.placeholder': 'for example: ls -la',
   'terminal.input': 'Bash command',
-  'terminal.hint': 'Ctrl or ⌘ + Enter to run',
+  'terminal.hint': 'Enter to run',
   'terminal.run': 'Run',
   'terminal.running': 'Running…',
   'terminal.status': 'Exit {code} · {duration}s',

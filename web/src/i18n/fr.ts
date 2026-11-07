@@ -69,7 +69,7 @@ export const fr: Record<keyof typeof en, string> = {
   'terminal.empty': 'Prêt pour une commande Bash.',
   'terminal.placeholder': 'par exemple : ls -la',
   'terminal.input': 'Commande Bash',
-  'terminal.hint': 'Ctrl ou ⌘ + Entrée pour exécuter',
+  'terminal.hint': 'Entrée pour exécuter',
   'terminal.run': 'Exécuter',
   'terminal.running': 'Exécution…',
   'terminal.status': 'Sortie {code} · {duration}s',
