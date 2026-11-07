@@ -5,6 +5,13 @@ Private, technical counterpart of `CHANGELOG.md`. `CHANGELOG.md` is **public**: 
 `maxxing update`. This file is for us: API, data formats, migrations, internals, gotchas. It is never
 shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
+## Unreleased
+
+- Crons now persist `provider` (`"" | "claude" | "codex" | "cursor"`; empty follows the server default) alongside
+  `model`. `POST`/`PATCH /api/crons` validate it, and `_run_claude()` passes it through to `service.create_session()`.
+  A reused cron session is replaced when its provider no longer matches the job, avoiding a turn on the old CLI.
+  The editor fetches the selected provider's model catalogue. Added API and execution tests.
+
 ## 2.0.0-alpha.118 - 2026-11-05
 
 - Audit of a117 (`proxylisten.py`). `guarded_protocol(port)` = uvicorn's HTTP protocol (httptools or h11) with, on the

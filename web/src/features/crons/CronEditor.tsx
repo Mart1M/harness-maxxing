@@ -3,8 +3,8 @@ import * as React from 'react'
 import { Bot, Terminal } from 'lucide-react'
 import { useT } from '@/i18n'
 import { isApiError } from '@/lib/api'
-import { useClaudeStatus, useSaveCron, useTelegram, useWorkspace } from '@/lib/queries'
-import type { Cron, CronKind, CronNotify, CronPermissionMode } from '@/lib/types'
+import { useClaudeStatus, useProviderModels, useProviders, useSaveCron, useTelegram, useWorkspace } from '@/lib/queries'
+import type { Cron, CronKind, CronNotify, CronPermissionMode, ProviderId } from '@/lib/types'
 import {
   Button,
   Dialog,
@@ -38,6 +38,7 @@ type Form = {
   topic_path: string | null
   prompt: string
   model: string
+  provider: ProviderId | ''
   reuse_session: boolean
   permission_mode: CronPermissionMode
   schedule: string
@@ -57,6 +58,7 @@ function initial(seed: EditorSeed, copyName: (n: string) => string): Form {
       topic_path: null,
       prompt: '',
       model: '',
+      provider: '',
       reuse_session: false,
       permission_mode: '',
       schedule: '0 7 * * *',
@@ -74,6 +76,7 @@ function initial(seed: EditorSeed, copyName: (n: string) => string): Form {
     topic_path: j.kind === 'claude' ? j.topic_path : null,
     prompt: j.prompt,
     model: j.model,
+    provider: j.provider || '',
     reuse_session: j.reuse_session,
     permission_mode: j.permission_mode || '',
     schedule: j.schedule,
@@ -120,6 +123,7 @@ function EditorForm({ seed, onCancel, onSaved }: { seed: EditorSeed; onCancel: (
   const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
   const save = useSaveCron()
   const { data: claude } = useClaudeStatus()
+  const { data: providers } = useProviders()
   const { data: ws } = useWorkspace()
   const { data: tg } = useTelegram()
   const set = <K extends keyof Form>(k: K, v: Form[K]) => {
@@ -137,9 +141,16 @@ function EditorForm({ seed, onCancel, onSaved }: { seed: EditorSeed; onCancel: (
     return out
   }, [ws, t, mask])
   const topicValue = f.topic_path === null ? '' : f.topic_path === '' ? '__root' : f.topic_path
-  const models = claude?.models || []
+  const effectiveProvider = f.provider || claude?.default_provider || 'claude'
+  const { data: providerModels = [] } = useProviderModels(effectiveProvider)
+  const models = effectiveProvider === 'claude' ? claude?.models || [] : providerModels
+  const defaultModel = effectiveProvider === 'claude' ? claude?.default_model : effectiveProvider === 'codex' ? claude?.default_model_codex : claude?.default_model_cursor
+  const providerOptions = [
+    { value: '__default', label: t('crons.providerDefault', { provider: providers?.providers.find((p) => p.id === effectiveProvider)?.label || effectiveProvider }) },
+    ...(providers?.providers ?? []).map((p) => ({ value: p.id, label: p.label, disabled: !p.installed })),
+  ]
   const modelOptions = [
-    { value: '__default', label: claude?.default_model ? t('crons.modelDefaultNamed', { model: models.find((m) => m.id === claude.default_model)?.label || claude.default_model }) : t('crons.modelDefault') },
+    { value: '__default', label: defaultModel ? t('crons.modelDefaultNamed', { model: models.find((m) => m.id === defaultModel)?.label || defaultModel }) : t('crons.modelDefault') },
     ...models.map((m) => ({ value: m.id, label: m.label })),
     ...(f.model && !models.some((m) => m.id === f.model) ? [{ value: f.model, label: f.model }] : []),
   ]
@@ -171,7 +182,7 @@ function EditorForm({ seed, onCancel, onSaved }: { seed: EditorSeed; onCancel: (
       timeout_s: Math.round(Number(f.timeout) * UNIT_S[f.unit]),
       ...(f.kind === 'shell'
         ? { command: f.command }
-        : { topic_path: f.topic_path || '', prompt: f.prompt, model: f.model, reuse_session: f.reuse_session, permission_mode: f.permission_mode }),
+        : { topic_path: f.topic_path || '', prompt: f.prompt, model: f.model, provider: f.provider, reuse_session: f.reuse_session, permission_mode: f.permission_mode }),
     }
     save.mutate(
       { id: seed.mode === 'edit' ? seed.job.id : undefined, ...body },
@@ -240,6 +251,16 @@ function EditorForm({ seed, onCancel, onSaved }: { seed: EditorSeed; onCancel: (
             />
           </FormField>
           <div className="grid gap-5 sm:grid-cols-2">
+            <FormField label={t('crons.field.provider')}>
+              <Select
+                value={f.provider || '__default'}
+                onValueChange={(v) => {
+                  set('provider', (v === '__default' ? '' : v) as ProviderId)
+                  set('model', '')
+                }}
+                options={providerOptions}
+              />
+            </FormField>
             <FormField label={t('crons.field.model')}>
               <Select value={f.model || '__default'} onValueChange={(v) => set('model', v === '__default' ? '' : v)} options={modelOptions} />
             </FormField>

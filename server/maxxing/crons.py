@@ -42,6 +42,7 @@ from typing import Any, Iterator
 from zoneinfo import ZoneInfo
 
 from . import config
+from .sessions import providers
 
 BLOCK_BEGIN = "# >>> claude-maxxing (managed) >>>"
 BLOCK_END = "# <<< claude-maxxing <<<"
@@ -450,7 +451,7 @@ def restore_job(cid: str) -> dict:
 
 DEFAULTS: dict[str, Any] = {
     "name": "", "schedule": "0 5 * * *", "kind": "shell", "command": "", "topic_path": "",
-    "prompt": "", "model": "", "reuse_session": False, "enabled": True, "notify": "failure",
+    "prompt": "", "model": "", "provider": "", "reuse_session": False, "enabled": True, "notify": "failure",
     "timeout_s": DEFAULT_TIMEOUT, "permission_mode": "",     # "" = the topic's / global permission mode
 }
 PERMISSION_MODES = ("", "bypass", "acceptEdits", "default")
@@ -477,8 +478,10 @@ def _clean(job: dict) -> dict:
         raise CronError("timeout_s must be between 10 s and 7 days", "invalid_timeout")
     for b in ("enabled", "reuse_session"):
         j[b] = bool(j[b])
-    for s in ("command", "topic_path", "prompt", "model", "permission_mode"):
+    for s in ("command", "topic_path", "prompt", "model", "provider", "permission_mode"):
         j[s] = str(j[s] or "")
+    if j["provider"] and j["provider"] not in providers.PROVIDERS:
+        raise CronError("provider must be " + ", ".join(providers.PROVIDERS) + " or empty", "invalid_provider")
     if j["permission_mode"] not in PERMISSION_MODES:
         raise CronError("permission_mode must be bypass, acceptEdits, default or empty", "invalid_permission_mode")
     if j["kind"] == "shell":
@@ -1110,17 +1113,21 @@ def store_mode(sid: str, mode: str) -> None:
 
 
 def _run_claude(job: dict) -> tuple[bool, int, str, str | None]:
-    """Run the prompt as a Claude session turn. -> (ok, code, output_tail, session_id)."""
+    """Run the prompt as an agent session turn. -> (ok, code, output_tail, session_id)."""
     from .sessions import service                       # lazy: sessions are owned by core
     when = dt.datetime.now(tz()).strftime("%Y-%m-%d %H:%M")
     title = f"{job['name']} - {when}"
     timeout = _timeout(job)
     env = {"MAXXING_CRON_ID": job["id"], "MAXXING_CRON_NAME": job["name"]}
     smap_path = _dir() / "sessions.json"
+    provider = job.get("provider") or None
     sid = None
     if job.get("reuse_session"):
         prev = (config.read_json(smap_path, {}) or {}).get(job["id"])
-        if prev and service.get_session(prev):
+        prev_session = service.get_session(prev) if prev else None
+        # A persisted conversation belongs to a CLI. Do not silently keep using it after
+        # the job was switched to another provider.
+        if prev_session and providers.normalize_provider(prev_session.get("provider") or config.load_config().get("default_provider")) == providers.normalize_provider(provider or config.load_config().get("default_provider")):
             store_mode(prev, job.get("permission_mode") or "")
             service.send_message(prev, job["prompt"], source="cron")
             sid = prev
@@ -1128,7 +1135,7 @@ def _run_claude(job: dict) -> tuple[bool, int, str, str | None]:
         s = service.create_session(job["topic_path"], message=job["prompt"], title=title,
                                    model=job.get("model") or None, source="cron", notify=False,
                                    cron=True, env=env, timeout_s=timeout,
-                                   permission_mode=job.get("permission_mode") or "")
+                                   permission_mode=job.get("permission_mode") or "", provider=provider)
         sid = s["id"]
         if job.get("reuse_session"):
             with _lock:

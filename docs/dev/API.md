@@ -221,7 +221,7 @@ the change is re-applied on the fresh file (3 tries), then `409 conflict`. Not v
 ```
 Cron = {id, name, schedule,            // 5-field cron expression
         kind:"shell"|"claude", command, // shell
-        topic_path, prompt, model, reuse_session:bool,  // claude
+        topic_path, prompt, model, provider:""|"claude"|"codex"|"cursor", reuse_session:bool,  // agent; empty provider = server default
         permission_mode:""|"bypass"|"acceptEdits"|"default",  // claude; "" = the topic's, else the global mode
         enabled, notify:"never"|"failure"|"always", timeout_s,
         last_run:{at, ok, code, duration_s}|null, next_run:float|null, human:string,

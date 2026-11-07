@@ -328,6 +328,8 @@ export type Cron = {
   topic_path: string
   prompt: string
   model: string
+  /** '' = server default provider. */
+  provider: ProviderId | ''
   reuse_session: boolean
   /** '' = the topic's mode, else the global one. */
   permission_mode?: CronPermissionMode

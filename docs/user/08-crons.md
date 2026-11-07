@@ -16,13 +16,14 @@ Click **New job** and fill in:
 | Schedule | cron expression; the editor shows it in words and lists the next runs |
 | Type | **Shell** (a command run with bash) or **Claude** (a prompt sent to a session in a topic) |
 | Command | shell: e.g. `/root/maxxing/projects/acme/scripts/report.sh` |
-| Topic, prompt, model | Claude: where the session runs (follows a rename of the topic or its project), what to do, which model |
+| Topic, prompt, agent, model | Prompt job: where the session runs (follows a rename of the topic or its project), what to do, which installed agent (Claude Code, Codex CLI or Cursor CLI) and its model. The server default remains available. |
 | Reuse session | Claude: keep one session across runs (it accumulates context) instead of a new session each time |
 | Notify | Telegram report: never, on failure (default), always |
 | Timeout | maximum duration (default 1 hour) |
 
 **Run now** starts a job immediately. The history shows the last runs with their output tail; for
-Claude jobs, a link opens the session.
+prompt jobs, a link opens the session. If a job reuses a session and you change its agent, its next run starts a new
+session with that agent.
 
 ## Schedule syntax
 

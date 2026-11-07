@@ -2009,6 +2009,8 @@ export const fr: Record<keyof typeof en, string> = {
   'crons.field.topic': 'Topic',
   'crons.field.prompt': 'Prompt',
   'crons.field.model': 'Modèle',
+  'crons.field.provider': 'Agent',
+  'crons.providerDefault': 'Par défaut du serveur ({provider})',
   'sessions.switchModel.title': 'Changer le modèle de cette session ?',
   'sessions.switchModel.desc': 'Chaque modèle a son propre cache : au prochain message, le nouveau modèle relit toute la conversation ({tokens} tokens) sans cache, une fois - plusieurs fois le prix d’un message normal. Compactez d’abord pour que ce soit léger.',
   'sessions.switchModel.confirm': 'Changer',

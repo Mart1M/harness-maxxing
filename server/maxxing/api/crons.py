@@ -27,6 +27,7 @@ class CronIn(BaseModel):
     topic_path: Optional[str] = None
     prompt: Optional[str] = None
     model: Optional[str] = None
+    provider: Optional[Literal["", "claude", "codex", "cursor"]] = None
     reuse_session: Optional[bool] = None
     enabled: Optional[bool] = None
     notify: Optional[Literal["never", "failure", "always"]] = None

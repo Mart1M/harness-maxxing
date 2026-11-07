@@ -306,6 +306,7 @@ def test_run_claude_job(org, monkeypatch):
     assert kw["source"] == "cron" and kw["cron"] is True and kw["title"].startswith("Digest - ")
     assert kw["model"] == "claude-sonnet-5-5" and kw["message"] == "Summarise"
     assert kw["permission_mode"] == "acceptEdits"
+    assert kw["provider"] is None
     r = crons.run_job(j["id"])                                      # reuse -> send_message
     assert calls[-1][:3] == ("send", "s-1", "Summarise") and calls[-1][3]["source"] == "cron"
     assert modes == [("s-1", "acceptEdits")]                        # the reused session follows the job
@@ -314,6 +315,25 @@ def test_run_claude_job(org, monkeypatch):
     svc.last_assistant_text = lambda sid: ""
     r = crons.run_job(j["id"])
     assert not r["ok"] and r["output_tail"] == "boom"
+
+
+def test_claude_job_uses_selected_provider_and_restarts_reused_session_after_change(org, monkeypatch):
+    (org.ws / "projects" / "acme" / "topics" / "blog").mkdir(parents=True)
+    calls = []
+    svc = types.ModuleType("maxxing.sessions.service")
+    svc.create_session = lambda path, **kw: calls.append((path, kw)) or {"id": "s-codex"}
+    svc.get_session = lambda sid: {"id": sid, "provider": "claude"} if sid == "s-claude" else {"id": sid, "provider": "codex"}
+    svc.send_message = lambda *args, **kw: pytest.fail("a Claude session must not be reused for a Codex cron")
+    svc.wait_turn = lambda sid, timeout: {"id": sid, "state": "idle", "error": None}
+    svc.last_assistant_text = lambda sid: "Done."
+    monkeypatch.setitem(sys.modules, "maxxing.sessions.service", svc)
+    import maxxing.sessions as pkg
+    monkeypatch.setattr(pkg, "service", svc, raising=False)
+    j = crons.create_job({"name": "Digest", "kind": "claude", "topic_path": "projects/acme/topics/blog",
+                          "prompt": "Summarise", "provider": "codex", "reuse_session": True})
+    crons.config.write_json(crons._dir() / "sessions.json", {j["id"]: "s-claude"})
+    assert crons.run_job(j["id"])["ok"]
+    assert calls[0][1]["provider"] == "codex"
 
 
 def test_claude_job_validation(org):
@@ -391,8 +411,13 @@ def test_api_crud(client, org, monkeypatch):
     assert client.post("/api/crons", json={"name": "x", "schedule": "* *", "command": "x"}).json()["error"] == "invalid"
     assert client.post("/api/crons", json={"name": "x", "kind": "sql", "command": "x"}).status_code == 422
 
+    agent = client.post("/api/crons", json={"name": "Codex digest", "kind": "claude", "topic_path": "",
+                                              "prompt": "Summarise", "provider": "codex"})
+    assert agent.status_code == 200, agent.text
+    assert agent.json()["provider"] == "codex"
+
     data = client.get("/api/crons").json()
-    assert [j["id"] for j in data["jobs"]] == [job["id"]] and len(data["external"]) == 2
+    assert [j["id"] for j in data["jobs"]] == [job["id"], agent.json()["id"]] and len(data["external"]) == 2
 
     p = client.patch(f"/api/crons/{job['id']}", json={"enabled": False, "schedule": "@hourly"}).json()
     assert p["enabled"] is False and p["next_run"] is None and p["schedule"] == "@hourly"

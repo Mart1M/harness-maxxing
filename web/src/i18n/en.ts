@@ -2027,6 +2027,8 @@ export const en = {
   'crons.field.topic': 'Topic',
   'crons.field.prompt': 'Prompt',
   'crons.field.model': 'Model',
+  'crons.field.provider': 'Agent',
+  'crons.providerDefault': 'Server default ({provider})',
   'sessions.switchModel.title': 'Switch the model of this session?',
   'sessions.switchModel.desc': 'Each model has its own cache: the next message makes the new model read the whole conversation ({tokens} tokens) without cache, once - several times the price of a normal message. Compact first to make it cheap.',
   'sessions.switchModel.confirm': 'Switch',
