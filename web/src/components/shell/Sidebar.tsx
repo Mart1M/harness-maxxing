@@ -134,7 +134,7 @@ export function Sidebar() {
     >
       {!collapsed && <ResizeEdge side={side} />}
       <div className={cn('flex h-14 items-center gap-2 px-3', collapsed && 'justify-center px-0')}>
-        <NavLink to="/" className="min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Harness Maxxing">
+        <NavLink to="/" className="min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="WuitBot">
           <Logo collapsed={collapsed} className={cn(collapsed && 'justify-center')} />
         </NavLink>
       </div>

@@ -8,7 +8,7 @@ import { TouchAppButton, TouchSessionsButton } from './TouchNav'
 
 export function useDocumentTitle(title?: string) {
   React.useEffect(() => {
-    document.title = title ? `${title} · Harness Maxxing` : 'Harness Maxxing'
+    document.title = title ? `${title} · WuitBot` : 'WuitBot'
   }, [title])
 }
 

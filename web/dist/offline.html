@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#09090b" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Offline · Harness Maxxing</title>
+    <title>Offline · WuitBot</title>
     <!-- Served by the service worker when a navigation fails. Self-contained: no external assets. -->
     <style>
       :root { color-scheme: dark; --bg: #09090b; --fg: #fafafa; --muted: #a1a1aa; --card: #18181b; --border: #27272a; --primary: #5b8def; }
@@ -61,7 +61,7 @@
         if (!lang) lang = (navigator.language || 'en').slice(0, 2);
         if (lang === 'fr') {
           document.documentElement.lang = 'fr';
-          document.title = 'Hors ligne · Harness Maxxing';
+          document.title = 'Hors ligne · WuitBot';
           document.getElementById('t').textContent = 'Vous êtes hors ligne';
           document.getElementById('d').textContent = "Impossible de joindre le serveur. Vérifiez votre connexion (ou votre VPN) puis réessayez.";
           document.getElementById('r').textContent = 'Réessayer';

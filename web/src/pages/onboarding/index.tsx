@@ -79,7 +79,7 @@ export default function OnboardingPage() {
         <aside className="md:sticky md:top-12 md:self-start">
           <div className="mb-6 flex items-center gap-2.5 md:mb-10">
             <LogoMark />
-            <span className="text-[15px] font-semibold tracking-tight">Harness Maxxing</span>
+            <span className="text-[15px] font-semibold tracking-tight">WuitBot</span>
           </div>
           {/* Mobile: compact progress */}
           <div className="md:hidden">

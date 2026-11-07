@@ -13,7 +13,7 @@ export function Logo({ collapsed, className, nameClassName }: { collapsed?: bool
   return (
     <span className={cn('flex min-w-0 items-center gap-2.5', className)}>
       <LogoMark />
-      {!collapsed && <span className={cn('truncate text-[15px] font-semibold tracking-tight', nameClassName)}>Harness Maxxing</span>}
+      {!collapsed && <span className={cn('truncate text-[15px] font-semibold tracking-tight', nameClassName)}>WuitBot</span>}
     </span>
   )
 }

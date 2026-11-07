@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Harness Maxxing",
-  "short_name": "Maxxing",
+  "name": "WuitBot",
+  "short_name": "WuitBot",
   "description": "Your Claude Code workspace: sessions, files, tasks and crons on your own server.",
   "start_url": "/",
   "scope": "/",
