@@ -11,6 +11,8 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
   `model`. `POST`/`PATCH /api/crons` validate it, and `_run_claude()` passes it through to `service.create_session()`.
   A reused cron session is replaced when its provider no longer matches the job, avoiding a turn on the old CLI.
   The editor fetches the selected provider's model catalogue. Added API and execution tests.
+- `pageData.Q` accepts function-based `staleTime` values returned by query factories. The production web bundle is
+  rebuilt, including the CRON provider selector.
 
 ## 2.0.0-alpha.118 - 2026-11-05
 

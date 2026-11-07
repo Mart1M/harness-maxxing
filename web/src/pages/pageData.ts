@@ -32,7 +32,9 @@ import {
 } from '@/lib/queries'
 import { prefetchPageChunk } from './prefetch'
 
-type Q = { queryKey: readonly unknown[]; queryFn: (...a: never[]) => Promise<unknown>; staleTime?: number }
+// Query factories use both a fixed stale time and a function (fileKindQuery adapts it
+// while a missing file is polled). They are passed to React Query with its own type below.
+type Q = { queryKey: readonly unknown[]; queryFn: (...a: never[]) => Promise<unknown>; staleTime?: unknown }
 
 const SETTINGS: Record<string, () => Q[]> = {
   stats: () => [tokenStatsQuery()],
