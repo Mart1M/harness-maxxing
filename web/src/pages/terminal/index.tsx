@@ -43,9 +43,12 @@ export default function TerminalPage() {
       <div className="flex min-h-0 flex-1 flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t('terminal.warning')}</p>
         <div
-          className="min-h-[18rem] flex-1 cursor-text overflow-auto rounded-xl border bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 shadow-xs dark:bg-black"
+          className="min-h-[18rem] flex-1 cursor-text select-text overflow-auto rounded-xl border bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 shadow-xs dark:bg-black"
           aria-live="polite"
-          onClick={() => input.current?.focus()}
+          onClick={() => {
+            // A drag ends with a click too: preserve the selection so terminal output can be copied.
+            if (!window.getSelection()?.toString()) input.current?.focus()
+          }}
         >
           <pre className="min-h-[1.5rem] whitespace-pre-wrap break-words">{output || t('terminal.empty')}</pre>
           <form

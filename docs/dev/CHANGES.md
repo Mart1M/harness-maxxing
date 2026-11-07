@@ -7,6 +7,8 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
 ## Unreleased
 
+- The terminal output pane explicitly permits text selection; its click-to-focus behavior now skips a completed
+  selection so dragging output can be copied.
 - Session composer provider/model selectors use compact maximum widths and hide their labels at the narrow container
   breakpoint (tooltips retain their full labels), preserving room for the voice and Send buttons.
 - New authenticated `POST /api/terminal/run` runs one non-interactive Bash command from `workspace.root()`. It uses a
