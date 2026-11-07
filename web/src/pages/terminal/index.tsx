@@ -1,35 +1,41 @@
 // Terminal page: an authenticated Bash command console rooted in the configured workspace.
 import * as React from 'react'
 import { Page } from '@/components/shell/Page'
-import { api, errorMessage } from '@/lib/api'
 import { useT } from '@/i18n'
 
-type Result = { stdout: string; stderr: string; code: number; timed_out: boolean; truncated: boolean; cwd: string; duration_s: number }
-type Entry = { command: string; result?: Result; error?: string }
+const ansi = /\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\[[0-?]*[ -/]*[@-~]/g
+const clean = (text: string) => text.replace(ansi, '').replace(/\r(?!\n)/g, '')
 
 export default function TerminalPage() {
   const t = useT()
   const [command, setCommand] = React.useState('')
-  const [entries, setEntries] = React.useState<Entry[]>([])
-  const [running, setRunning] = React.useState(false)
+  const [output, setOutput] = React.useState('')
+  const [connected, setConnected] = React.useState(false)
   const input = React.useRef<HTMLInputElement | null>(null)
+  const socket = React.useRef<WebSocket | null>(null)
 
-  const run = async () => {
-    const value = command.trim()
-    if (!value || running) return
-    setRunning(true)
-    setCommand('')
-    const index = entries.length
-    setEntries((old) => [...old, { command: value }])
-    try {
-      const result = await api.post<Result>('/api/terminal/run', { command: value })
-      setEntries((old) => old.map((entry, i) => (i === index ? { ...entry, result } : entry)))
-    } catch (e) {
-      setEntries((old) => old.map((entry, i) => (i === index ? { ...entry, error: errorMessage(e) } : entry)))
-    } finally {
-      setRunning(false)
-      input.current?.focus()
+  React.useEffect(() => {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const ws = new WebSocket(`${protocol}//${location.host}/api/terminal/ws`)
+    socket.current = ws
+    ws.onopen = () => { setConnected(true); input.current?.focus() }
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data) as { t?: string; data?: string }
+        if (message.t === 'out' && typeof message.data === 'string') {
+          const data = message.data
+          setOutput((old) => (old + clean(data)).slice(-256_000))
+        }
+      } catch { /* invalid terminal output is ignored */ }
     }
+    ws.onclose = () => setConnected(false)
+    return () => ws.close()
+  }, [])
+
+  const run = () => {
+    if (!command || !connected) return
+    socket.current?.send(JSON.stringify({ data: command + '\n' }))
+    setCommand('')
   }
 
   return (
@@ -41,39 +47,27 @@ export default function TerminalPage() {
           aria-live="polite"
           onClick={() => input.current?.focus()}
         >
-          {entries.length === 0 && <span className="text-zinc-500">{t('terminal.empty')}</span>}
-          {entries.map((entry, i) => (
-            <div key={i} className="mb-5 last:mb-0">
-              <div className="whitespace-pre-wrap text-emerald-400">$ {entry.command}</div>
-              {entry.error && <pre className="mt-1 whitespace-pre-wrap break-words text-red-300">{entry.error}</pre>}
-              {entry.result && <>
-                {entry.result.stdout && <pre className="mt-1 whitespace-pre-wrap break-words">{entry.result.stdout}</pre>}
-                {entry.result.stderr && <pre className="mt-1 whitespace-pre-wrap break-words text-amber-300">{entry.result.stderr}</pre>}
-                <div className={entry.result.code === 0 ? 'mt-1 text-zinc-500' : 'mt-1 text-red-300'}>
-                  {t('terminal.status', { code: entry.result.code, duration: entry.result.duration_s })}
-                  {entry.result.timed_out ? ` · ${t('terminal.timedOut')}` : ''}
-                  {entry.result.truncated ? ` · ${t('terminal.truncated')}` : ''}
-                </div>
-              </>}
-              {!entry.result && !entry.error && <span className="text-zinc-500">{t('terminal.running')}</span>}
-            </div>
-          ))}
+          <pre className="min-h-[1.5rem] whitespace-pre-wrap break-words">{output || t('terminal.empty')}</pre>
           <form
             className="flex items-center gap-2 text-emerald-400"
-            onSubmit={(e) => { e.preventDefault(); void run() }}
+            onSubmit={(e) => { e.preventDefault(); run() }}
           >
             <span aria-hidden="true">$</span>
             <input
             ref={input}
             value={command}
             onChange={(e) => setCommand(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.ctrlKey && e.key.toLowerCase() === 'c' && !command) { e.preventDefault(); socket.current?.send(JSON.stringify({ data: '\u0003' })) }
+              else if (e.key === 'Tab') { e.preventDefault(); socket.current?.send(JSON.stringify({ data: '\t' })) }
+            }}
             placeholder={t('terminal.placeholder')}
             aria-label={t('terminal.input')}
             className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none placeholder:text-zinc-600"
-            disabled={running}
+            disabled={!connected}
             autoFocus
           />
-            <span className="shrink-0 text-[11px] text-zinc-600">{running ? t('terminal.running') : t('terminal.hint')}</span>
+            <span className="shrink-0 text-[11px] text-zinc-600">{connected ? t('terminal.hint') : t('terminal.connecting')}</span>
           </form>
         </div>
       </div>

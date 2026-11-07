@@ -7,7 +7,7 @@ All notable changes to Harness Maxxing. Versions follow semantic versioning.
 
 New:
 - **Scheduled jobs can choose their AI agent.** Select Claude Code, Codex CLI or Cursor CLI when creating or editing a prompt job; its model list follows the selected agent.
-- **Terminal in the sidebar.** Type a Bash command directly at its prompt in your workspace; see output, errors and exit code without opening SSH.
+- **Terminal in the sidebar.** Type a Bash command directly at its prompt in your workspace; interactive programs such as `agent login` can ask for input there too.
 
 Fixes:
 - **File links in answers open again.** A full URL pointing to a file in your workspace now opens the file viewer instead of a missing app page.

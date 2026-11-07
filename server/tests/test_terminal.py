@@ -30,3 +30,15 @@ def test_terminal_does_not_block_other_requests(client):
     assert client.get("/api/auth/state").status_code == 200
     thread.join()
     assert response[0].status_code == 200
+
+
+def test_terminal_websocket_is_an_interactive_shell(client):
+    with client.websocket_connect("/api/terminal/ws") as ws:
+        ws.send_json({"data": "printf interactive-ok\\n"})
+        output = ""
+        for _ in range(10):
+            message = ws.receive_json()
+            output += message.get("data", "")
+            if "interactive-ok" in output:
+                break
+        assert "interactive-ok" in output

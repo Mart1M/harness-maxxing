@@ -72,6 +72,7 @@ export const fr: Record<keyof typeof en, string> = {
   'terminal.hint': 'Entrée pour exécuter',
   'terminal.run': 'Exécuter',
   'terminal.running': 'Exécution…',
+  'terminal.connecting': 'Connexion…',
   'terminal.status': 'Sortie {code} · {duration}s',
   'terminal.timedOut': 'délai dépassé',
   'terminal.truncated': 'sortie tronquée',

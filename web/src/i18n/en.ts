@@ -74,6 +74,7 @@ export const en = {
   'terminal.hint': 'Enter to run',
   'terminal.run': 'Run',
   'terminal.running': 'Running…',
+  'terminal.connecting': 'Connecting…',
   'terminal.status': 'Exit {code} · {duration}s',
   'terminal.timedOut': 'timed out',
   'terminal.truncated': 'output truncated',
