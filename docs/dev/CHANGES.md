@@ -7,6 +7,9 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
 ## Unreleased
 
+- New authenticated `POST /api/terminal/run` runs one non-interactive Bash command from `workspace.root()`. It uses a
+  separate process group, terminates it after 120 s, caps returned stdout/stderr at 128 KiB each, and reports status,
+  timing and truncation. `/terminal` is a primary navigation page with a console-style command history.
 - Crons now persist `provider` (`"" | "claude" | "codex" | "cursor"`; empty follows the server default) alongside
   `model`. `POST`/`PATCH /api/crons` validate it, and `_run_claude()` passes it through to `service.create_session()`.
   A reused cron session is replaced when its provider no longer matches the job, avoiding a turn on the old CLI.

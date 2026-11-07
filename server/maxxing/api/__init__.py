@@ -17,6 +17,7 @@ ROUTERS = [
     "filesite",
     "tasks",
     "crons",
+    "terminal",
     "telegram",
     "push",
     "pc",
