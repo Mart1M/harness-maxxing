@@ -7,6 +7,8 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
 ## Unreleased
 
+- Session composer provider/model selectors use compact maximum widths and hide their labels at the narrow container
+  breakpoint (tooltips retain their full labels), preserving room for the voice and Send buttons.
 - New authenticated `POST /api/terminal/run` runs one non-interactive Bash command from `workspace.root()`. It uses a
   separate process group, terminates it after 120 s, caps returned stdout/stderr at 128 KiB each, and reports status,
   timing and truncation. Bash work runs off the ASGI loop, so a long command cannot freeze other pages. `/api/terminal/ws`

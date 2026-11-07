@@ -10,6 +10,7 @@ New:
 - **Terminal in the sidebar.** Type a Bash command directly at its prompt in your workspace; interactive programs such as `agent login` can ask for input there too.
 
 Fixes:
+- **Composer on small screens.** The provider and model menus now shrink to keep the Send button inside the message bar.
 - **File links in answers open again.** A full URL pointing to a file in your workspace now opens the file viewer instead of a missing app page.
 
 ## 2.0.0-alpha.118 - 2026-11-05

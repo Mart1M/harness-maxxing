@@ -828,11 +828,11 @@ export function SessionColumn({ col, sid, variant, index, count, place }: { col:
             toolbar={
               session ? (
                 <>
-                  <ProviderPicker chosen={session.provider ?? 'claude'} onChange={actions.provider} disabled={running} />
+                  <ProviderPicker chosen={session.provider ?? 'claude'} onChange={actions.provider} disabled={running} compact />
                   {(session.provider ?? 'claude') === 'claude' ? (
-                    <ModelPicker chosen={session.model} real={session.real_model} contextTokens={session.context_tokens} onChange={actions.model} />
+                    <ModelPicker chosen={session.model} real={session.real_model} contextTokens={session.context_tokens} onChange={actions.model} compact />
                   ) : (
-                    <ProviderModelPicker provider={session.provider ?? 'claude'} chosen={session.model} onChange={actions.model} />
+                    <ProviderModelPicker provider={session.provider ?? 'claude'} chosen={session.model} onChange={actions.model} compact />
                   )}
                   {session.plan_mode && <PlanChip session={session} />}
                 </>

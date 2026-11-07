@@ -24,11 +24,11 @@ export function ProviderPicker({ chosen, onChange, disabled, compact }: { chosen
             aria-label={`${t('sessions.provider.label')}: ${label}`}
             className={cn(
               'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10',
-              compact && 'h-7 px-1.5',
+              compact && 'h-7 max-w-24 px-1.5 max-md:h-10 max-md:max-w-20',
             )}
           >
             <Bot className="size-3.5 shrink-0" />
-            <span className="truncate">{label}</span>
+            <span className={cn('truncate', compact && '@max-sm:hidden')}>{label}</span>
             <ChevronDown className="size-3 shrink-0 opacity-60" />
           </button>
         </DropdownMenuTrigger>
@@ -67,11 +67,11 @@ export function ProviderModelPicker({ provider, chosen, onChange, disabled, comp
             aria-label={`${t('sessions.model.label')}: ${label}`}
             className={cn(
               'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10',
-              compact && 'h-7 px-1.5',
+              compact && 'h-7 max-w-28 px-1.5 max-md:h-10 max-md:max-w-24',
             )}
           >
             <Cpu className="size-3.5 shrink-0" />
-            <span className="truncate">{label}</span>
+            <span className={cn('truncate', compact && '@max-sm:hidden')}>{label}</span>
             <ChevronDown className="size-3 shrink-0 opacity-60" />
           </button>
         </DropdownMenuTrigger>
@@ -161,12 +161,12 @@ export function ModelPicker({
             aria-label={`${t('sessions.model.label')}: ${label}`}
             className={cn(
               'inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 max-md:h-10',
-              compact && 'h-7 px-1.5',
+              compact && 'h-7 max-w-28 px-1.5 max-md:h-10 max-md:max-w-24',
             )}
           >
             <Cpu className="size-3.5 shrink-0" />
             {/* narrow composer + a pending switch: only "-> next model" (the tooltip says which one answered) */}
-            <span className={cn('truncate', differs && '@max-sm:hidden')}>{label}</span>
+            <span className={cn('truncate', (differs || compact) && '@max-sm:hidden')}>{label}</span>
             {differs && (
               <span className="shrink-0 rounded bg-warning/15 px-1 text-[10px] whitespace-nowrap text-warning">
                 → {modelLabel(next, models)}
