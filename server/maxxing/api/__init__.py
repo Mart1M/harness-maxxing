@@ -18,6 +18,7 @@ ROUTERS = [
     "tasks",
     "crons",
     "telegram",
+    "push",
     "pc",
     "backup",
     "settings",

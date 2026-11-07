@@ -187,6 +187,7 @@ def post(title: str, body: str = "", level: str = "info", source: str = "custom"
     bus.invalidate("feed")
     if notify and not grouped:
         _to_telegram(ev)
+        _to_push(ev)
     return ev
 
 
@@ -394,6 +395,14 @@ def _to_telegram(ev: dict) -> None:
         gateway.feed_notify(ev, loud=(r == "loud"))
     except Exception:  # noqa: BLE001 - Telegram is optional
         log.exception("feed: telegram post failed")
+
+
+def _to_push(ev: dict) -> None:
+    try:
+        from . import push
+        push.on_feed(ev)
+    except Exception:  # noqa: BLE001 - push is optional
+        log.exception("feed: push failed")
 
 
 def system(title: str, body: str = "", level: str = "info", source: str = "system", url: str = "",

@@ -528,6 +528,26 @@ Telegram: rule `auto` = error -> loud, warning -> silent, else off; built-in `cr
 (own threads). The bot posts in the thread "Notifications" (`telegram.threads["#feed"]`) with buttons *Ask Claude*
 (`callback_data f:<id>` -> new session in the default topic, event quoted as data) and *Open* (https links).
 
+## Push (iPhone notifications)
+Session cookie. Apple key in secrets.json `apns` (`key` .p8 PEM, `key_id`, `team_id`, `topic` = bundle id), never returned;
+settings in config `push` `{enabled, turns: "all"|"notify"|"off", errors, crons}`; devices in `<state>/push.json` (mode 600).
+`PushState = {settings, credentials: {configured, key_set, key_id, team_id, topic}, devices: [{id (8 first hex of the token), name, env: "production"|"sandbox", added, last_ok, last_error}]}`.
+
+| Method | Path | Body | Answer |
+|---|---|---|---|
+| GET | `/api/push` | - | `PushState` |
+| PUT | `/api/push/settings` | `{enabled?, turns?, errors?, crons?}` | `PushState` · `400 bad_turns\|bad_value` |
+| PUT / DELETE | `/api/push/credentials` | PUT `{key?, key_id?, team_id?, topic?}` (the key may be pasted without its BEGIN/END lines; an unusable EC key is refused) | `PushState` · `400 bad_key\|bad_key_id\|bad_team_id\|bad_topic` |
+| POST | `/api/push/devices` | `{token (hex), name?, env?}` - sent by the page hosted in the iOS app (`window.__wuitbotPush`, event `wuitbot-push`), idempotent | `{id, registered}` · `400 bad_token\|bad_env`, `409 too_many` (20) |
+| DELETE | `/api/push/devices/{id}` | - | `PushState` · `404` |
+| POST | `/api/push/test` | - | `{sent, failed, removed, ...PushState}` · `409 no_device` |
+
+Sent through APNs (HTTP/2, ES256 provider token renewed every 50 min; sandbox host for a debug build): a finished turn
+(`sessions.service.on_turn_end`; never a compact/handoff/seed turn or a cron session; `turns: notify` = sessions with
+Notify on), a failed turn or any feed event of level `error` (`errors`), every event of the feed source `crons`
+(`crons`). Payload `{aps: {alert: {title, body}, sound, thread-id}, path}`; `path` (an app path) is opened by a tap.
+A token Apple answers 410 / `BadDeviceToken` / `Unregistered` is forgotten.
+
 ## Packs (starter projects)
 `Pack = {id, project, emoji, icon, title, description, topics[], crons[] (names), installed, partial, project_exists, basics}` (title and
 description in the configured language). Sources in `templates/packs/<id>/` (`pack.json` + `project/`). The first

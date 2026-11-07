@@ -13,6 +13,7 @@
 		1A0000000000000000000004 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000004 /* WebView.swift */; };
 		1A0000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000006 /* Assets.xcassets */; };
 		1A0000000000000000000006 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000007 /* Settings.bundle */; };
+		1A0000000000000000000010 /* Push.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000010 /* Push.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,8 @@
 		1B0000000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1B0000000000000000000007 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		1B0000000000000000000008 /* Harness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harness.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B0000000000000000000010 /* Push.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Push.swift; sourceTree = "<group>"; };
+		1B0000000000000000000011 /* Harness.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Harness.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,9 +55,11 @@
 				1B0000000000000000000002 /* ServerConfig.swift */,
 				1B0000000000000000000003 /* SetupView.swift */,
 				1B0000000000000000000004 /* WebView.swift */,
+				1B0000000000000000000010 /* Push.swift */,
 				1B0000000000000000000006 /* Assets.xcassets */,
 				1B0000000000000000000007 /* Settings.bundle */,
 				1B0000000000000000000005 /* Info.plist */,
+				1B0000000000000000000011 /* Harness.entitlements */,
 			);
 			path = Harness;
 			sourceTree = "<group>";
@@ -139,6 +144,7 @@
 			files = (
 				1A0000000000000000000001 /* HarnessApp.swift in Sources */,
 				1A0000000000000000000002 /* ServerConfig.swift in Sources */,
+				1A0000000000000000000010 /* Push.swift in Sources */,
 				1A0000000000000000000003 /* SetupView.swift in Sources */,
 				1A0000000000000000000004 /* WebView.swift in Sources */,
 			);
@@ -192,6 +198,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Harness/Harness.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -213,6 +220,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Harness/Harness.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";

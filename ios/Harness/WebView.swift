@@ -22,6 +22,7 @@ struct WebScreen: View {
     let url: URL
     @EnvironmentObject private var server: ServerConfig
     @StateObject private var model = WebModel()
+    @ObservedObject private var push = PushCenter.shared
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -39,6 +40,19 @@ struct WebScreen: View {
                             retry: { model.reload() }, change: { server.forget() })
             }
         }
+        .onAppear {
+            push.start()
+            openPending()
+        }
+        .onChange(of: push.pendingPath) { _ in openPending() }
+    }
+
+    /// A tap on a notification: open the page it carries inside the server.
+    private func openPending() {
+        guard let path = push.pendingPath, let target = URL(string: path, relativeTo: url)?.absoluteURL,
+              target.host?.lowercased() == url.host?.lowercased() else { return }
+        push.pendingPath = nil
+        model.webView?.load(URLRequest(url: target))
     }
 }
 
@@ -94,6 +108,7 @@ struct HarnessWebView: UIViewRepresentable {
         #endif
         context.coordinator.observe(web)
         model.webView = web
+        PushCenter.shared.webView = web
         model.startURL = url
         web.load(URLRequest(url: url))
         return web
@@ -155,6 +170,7 @@ struct HarnessWebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             model.error = nil
             model.progress = 1
+            PushCenter.shared.publish()
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

@@ -27,7 +27,7 @@ BIN_NAMES = {CLAUDE: ("claude",), CODEX: ("codex",), CURSOR: ("cursor-agent", "a
 # Secrets (Keys in Settings, flagged "expose", or secrets.json) the CLIs read from their environment
 AUTH_ENV = {CODEX: ("OPENAI_API_KEY", "CODEX_API_KEY"), CURSOR: ("CURSOR_API_KEY",)}
 SECRET_FOR = {CODEX: "openai_api_key", CURSOR: "cursor_api_key"}        # secrets.json names (Settings -> Agents)
-INSTALL = {CODEX: "npm i -g @openai/codex", CURSOR: "curl https://cursor.com/install -fsS | bash"}
+INSTALL = {CODEX: "npm i -g @openai/codex", CURSOR: "curl https://cursor.com/install -fsS -o /tmp/cursor-install.sh && bash /tmp/cursor-install.sh"}
 LOGIN = {CODEX: "codex login", CURSOR: "cursor-agent login"}
 KEY_HINT = {CODEX: "sk-…", CURSOR: "key_…"}
 RESUME_LOST = re.compile(r"no conversation found|no (?:saved )?(?:session|chat|rollout|thread)s? .{0,80}found|"

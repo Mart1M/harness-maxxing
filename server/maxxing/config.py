@@ -97,6 +97,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "notify_system": True,             # update / rollback / vulnerability problems into the "Alerts" thread
         "mirror_web": False,               # web turns are copied into the session's thread (opt-in)
     },
+    "push": {"enabled": True, "turns": "all", "errors": True, "crons": True},   # iPhone notifications (push.py)
     "backup": {"repo": "", "schedule": "40 4 * * *",
                "include": ["**/CLAUDE.md", "**/memory.md", "**/NOTES.md", "tasks.json",
                            "projects/*/topics/*/accounts.md", "extensions/**", ".claude/skills/**"]},

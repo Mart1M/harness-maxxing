@@ -11,7 +11,7 @@ Telegram thread and history: only the agent that answers changes.
 
 1. Install the CLI on the server and sign in once, as root:
    - Codex: `npm i -g @openai/codex`, then `codex login` (ChatGPT account) or give an API key.
-   - Cursor: `curl https://cursor.com/install -fsS | bash`, then `cursor-agent login`.
+   - Cursor: `curl https://cursor.com/install -fsS -o /tmp/cursor-install.sh`, then `bash /tmp/cursor-install.sh`, then `cursor-agent login`.
 2. Settings → Agents → **Other agents: Codex and Cursor** shows each CLI's state (installed, signed in), the command to
    run on the server, an optional API key field and a test button.
 3. Settings → Agents → **Default agent** shows which CLIs are installed and signed in. Pick the one new sessions use.

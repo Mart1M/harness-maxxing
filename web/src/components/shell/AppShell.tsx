@@ -8,6 +8,7 @@ import { useGlobalBus } from '@/lib/sse'
 import { api } from '@/lib/api'
 import { prefetchSessions } from '@/lib/queries'
 import { prefetchPages } from '@/pages/prefetch'
+import { usePushRegistration } from '@/features/push/usePushRegistration'
 import { ConnectionBanner } from './ConnectionBanner'
 import { useAuthState, useSettings } from '@/lib/queries'
 import { useDoneNotifier } from '@/features/notify/useDoneNotifier'
@@ -229,6 +230,7 @@ export function AppShell() {
   useBootEntrance()
   usePrefetch()
   useDoneNotifier()
+  usePushRegistration()
   const main = React.useRef<HTMLElement>(null)
   useScrollReset(main)
   useMobileViewport()

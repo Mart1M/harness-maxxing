@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct HarnessApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var server = ServerConfig()
 
     var body: some Scene {

@@ -12,7 +12,9 @@ Harness from **TestFlight** like any app: a PWA cannot be uploaded to App Store 
 - iOS 16 or later, iPhone and iPad. No third-party dependency.
 - **Forget the server**: iOS Settings -> Harness -> turn on "Forget the server", reopen the app. The error screen has a
   "Change server" button as well.
-- Not included: native push notifications (the web push of the PWA does not run in a web view), offline mode.
+- Push notifications (APNs): the app asks for permission, registers with Apple and gives its token to the page, which
+  registers it on the server (`Push.swift`, `Harness.entitlements`). Setup of the Apple key: `docs/user/33-notifications.md`.
+- Not included: offline mode.
 
 ## Run it in the simulator
 

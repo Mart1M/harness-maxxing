@@ -7,6 +7,7 @@ import { Button, CountBadge, Switch, toast } from '@/components/ui'
 import { Callout, SettingRow } from '@/features/common'
 import { notificationsSupported, playChime, showSystemNotification } from '@/features/notify/useDoneNotifier'
 import { SettingsCard, SectionStack } from './ui'
+import { PushCard } from '@/features/push/PushCard'
 import { FeedSettingsCards } from '@/features/feed/FeedSettings'
 
 export function usePermission(): [NotificationPermission | 'unsupported', () => Promise<NotificationPermission | 'unsupported'>] {
@@ -92,6 +93,9 @@ export function NotificationsSection() {
             <Switch id="mx-badge-pulse" checked={badgePulse} onCheckedChange={(v) => setNotify({ badgePulse: v })} />
           </span>
         </SettingRow>
+      </SettingsCard>
+      <SettingsCard title={t('push.title')} description={t('push.desc')}>
+        <PushCard />
       </SettingsCard>
       <FeedSettingsCards />
     </SectionStack>

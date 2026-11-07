@@ -36,6 +36,7 @@ export const qk = {
     link: ['telegram', 'link'] as const,
   },
   pc: ['pc'] as const,
+  push: ['push'] as const,
   backup: {
     all: ['backup'] as const,
     status: ['backup', 'status'] as const,

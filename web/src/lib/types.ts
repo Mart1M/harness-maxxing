@@ -816,3 +816,12 @@ export type InfraView = {
   servers: { name: string; label?: string; host: string; user: string; port: number; note: string }[]
   refresh_min?: number
 }
+
+export type PushTurns = 'all' | 'notify' | 'off'
+export type PushState = {
+  settings: { enabled: boolean; turns: PushTurns; errors: boolean; crons: boolean }
+  credentials: { configured: boolean; key_set: boolean; key_id: string; team_id: string; topic: string }
+  devices: { id: string; name: string; env: 'production' | 'sandbox'; added: number; last_ok: number | null; last_error: string }[]
+}
+export type PushTestResult = PushState & { sent: number; failed: number; removed: number }
+export type PushDevice = { token: string; name?: string; env: 'production' | 'sandbox' }
