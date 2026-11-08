@@ -848,6 +848,28 @@ function TopicNode({
   )
 }
 
+/** `sessions` with each sub-agent right after its parent (oldest first) and its nesting level; a session whose parent
+ * is not in the list stays where it is. */
+function nestSubAgents(sessions: Session[]): { ordered: Session[]; levels: Map<string, number> } {
+  const ids = new Set(sessions.map((s) => s.id))
+  const kids = new Map<string, Session[]>()
+  for (const s of sessions) if (s.parent && s.parent !== s.id && ids.has(s.parent)) kids.set(s.parent, [...(kids.get(s.parent) ?? []), s])
+  if (!kids.size) return { ordered: sessions, levels: new Map() }
+  const ordered: Session[] = []
+  const levels = new Map<string, number>()
+  const seen = new Set<string>()
+  const put = (s: Session, level: number) => {
+    if (seen.has(s.id)) return
+    seen.add(s.id)
+    ordered.push(s)
+    levels.set(s.id, level)
+    for (const c of (kids.get(s.id) ?? []).sort((a, b) => a.created - b.created)) put(c, Math.min(level + 1, 3))
+  }
+  for (const s of sessions) if (!(s.parent && s.parent !== s.id && ids.has(s.parent))) put(s, 0)
+  for (const s of sessions) put(s, 0) // a parent loop (never made by the app): nothing is lost
+  return { ordered, levels }
+}
+
 /** Session rows that unfold when a session is created, fold away when it is deleted / archived and slide
  * when the order changes (the most recent goes to the top). */
 function SessionRows({
@@ -875,11 +897,14 @@ function SessionRows({
   rise?: boolean
 }) {
   const ms = still ? 0 : PRESENCE_MS
-  const rows = usePresence(sessions, (s) => s.id, ms)
+  // Sub-agents (`maxxing agent spawn`) sit under the session that delegated them, one level in per generation. Only in
+  // the topic tree: the flat lists (Favorites, Recent) keep their own order.
+  const { ordered, levels } = React.useMemo(() => (labelOf || compact ? { ordered: sessions, levels: new Map<string, number>() } : nestSubAgents(sessions)), [sessions, labelOf, compact])
+  const rows = usePresence(ordered, (s) => s.id, ms)
   const box = React.useRef<HTMLDivElement>(null)
   useFlip(
     () => new Map([...(box.current?.querySelectorAll<HTMLElement>(':scope > [data-row]:not([data-leaving])') ?? [])].map((el) => [el.dataset.row!, el])),
-    [sessions.map((s) => s.id).join(' ')],
+    [ordered.map((s) => s.id).join(' ')],
     'y',
     ms,
   )
@@ -889,7 +914,7 @@ function SessionRows({
     <div ref={box} className="relative">
       {rows.map((p, i) => (
         <RowPresence key={p.key} id={p.key} leaving={p.leaving} appear={p.appear} rise={rise ? Math.min(i, 10) : undefined}>
-          <SessionRow s={p.item} open={openIds.has(p.item.id)} focused={focusedId === p.item.id} onOpen={onOpen} depth={depth} label={labelOf?.(p.item)} compact={compact} touchLayout={touchLayout} />
+          <SessionRow s={p.item} open={openIds.has(p.item.id)} focused={focusedId === p.item.id} onOpen={onOpen} depth={(depth ?? 2) + (levels.get(p.item.id) ?? 0)} label={labelOf?.(p.item)} compact={compact} touchLayout={touchLayout} />
         </RowPresence>
       ))}
     </div>
