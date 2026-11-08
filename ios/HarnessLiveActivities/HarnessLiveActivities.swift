@@ -17,7 +17,7 @@ struct HarnessSessionsLiveActivity: Widget {
         ActivityConfiguration(for: HarnessActivityAttributes.self) { context in
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Label("Harness", systemImage: "bolt.fill")
+                    Label("WuitBot", systemImage: "bolt.fill")
                         .font(.headline)
                     Spacer()
                     Text(sessionCount(context.state.runningSessions))
@@ -33,7 +33,7 @@ struct HarnessSessionsLiveActivity: Widget {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, 2)
+            .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.85))
             .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
