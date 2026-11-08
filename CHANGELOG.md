@@ -6,9 +6,12 @@ All notable changes to Harness Maxxing. Versions follow semantic versioning.
 ## Unreleased
 
 New:
+- **Sub-agents from the shell.** An agent can delegate work with `maxxing agent spawn`, choosing Claude, Codex or Cursor and a git worktree; each sub-agent appears in your session list like one you started yourself. `wait`, `read`, `diff` and `merge` bring the result back.
 - **Git worktrees for new sessions.** When a topic holds a git repository, the new-session form lets you run the session in one of the topic's worktrees, or create one from a branch name, so several sessions can work on different branches side by side.
 - **Scheduled jobs can choose their AI agent.** Select Claude Code, Codex CLI or Cursor CLI when creating or editing a prompt job; its model list follows the selected agent.
 - **Terminal in the sidebar.** Type a Bash command directly at its prompt in your workspace; interactive programs such as `agent login` can ask for input there too.
+- **iPhone Live Activities.** WuitBot now shows active Harness sessions on the Lock Screen and Dynamic Island: the
+  number running, the first session's title and messages waiting behind it.
 
 Fixes:
 - **Terminal.** Output can be selected and copied without the prompt stealing the selection.

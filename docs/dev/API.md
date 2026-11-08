@@ -104,6 +104,7 @@ Session = {
   error: string|null,
   plan_mode: bool,                    // turns run read-only (`--permission-mode plan`) and end with a plan
   permission_mode: string,            // set by its cron ("" = the topic's, else the global mode)
+  parent: string,                     // the session that delegated this one (`maxxing agent spawn`), "" = none; the web list shows such a session like any other, with a marker
   worktree: string,                   // git worktree the turns run in, relative to the workspace ("" = the topic folder); see Worktrees
   plan_ready: bool                    // a plan-mode turn finished OK: its plan waits for POST /plan/approve
 }

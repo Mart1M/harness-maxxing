@@ -103,6 +103,8 @@ export type Session = {
   path: string
   /** Folder (relative to the workspace) of a git worktree the turns run in instead of the topic folder; "" = the topic folder. */
   worktree?: string
+  /** The session that delegated this one (`maxxing agent spawn`), else "". */
+  parent?: string
   state: SessionState
   queue: number
   /** The waiting messages, in order (text cut at 280 chars), whoever queued them. */

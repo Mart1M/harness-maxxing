@@ -280,6 +280,7 @@ class Runner:
             model = ""                                  # a leftover Claude model id: Codex refuses it
         mcp_plan = mcp_auto.plan(self.sid, cfg, meta, cwd, item.get("text") or "")   # MCP servers this turn needs
         env = spawn.claude_env(meta.get("env") or {}, mode)
+        env["MAXXING_SESSION_ID"] = self.sid            # `maxxing agent spawn` in this turn records it as the parent
         env["MAXXING_SESSION"] = self.sid               # `maxxing mcp load` run by the turn finds its session
         text = (PLAN_PREFACE if plan else "") + build_prompt(item)
         base: list[str] = []

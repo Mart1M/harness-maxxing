@@ -166,3 +166,70 @@ def create(path: str, branch: str, repo: str = "", base: str = "") -> dict:
     gitview.clear_cache()
     rel = _rel(dest)
     return next(w for w in listing(path) if w["path"] == rel)
+
+
+# ---- review and merge of a worktree (maxxing agent diff / merge) ---------------------------------
+DIFF_LIMIT = 200_000
+
+
+def _find(path: str, wt: str) -> tuple[dict, dict]:
+    """(the worktree's `listing` entry, the main working tree of the same repository)."""
+    items = listing(path)
+    item = next((w for w in items if w["path"] == (wt or "").strip("/")), None)
+    if item is None:
+        raise WorktreeError(400, "bad_worktree", f"Not a worktree of this topic: {wt!r}")
+    main = next((w for w in items if w["repo"] == item["repo"] and w["main"]), None)
+    if main is None:
+        raise WorktreeError(404, "no_repo", "The repository's own working tree is missing")
+    return item, main
+
+
+def _abs(rel: str) -> Path:
+    return workspace.root().resolve() / rel
+
+
+def diff(path: str, wt: str) -> str:
+    """What the worktree changed: its commits since it left the base branch, then its uncommitted changes."""
+    item, main = _find(path, wt)
+    wp, base = _abs(item["path"]), main["branch"] or "HEAD"
+    try:
+        committed = gitview._git(wp, "diff", "--no-ext-diff", "--stat", "-p", f"{base}...HEAD") if item["branch"] != main["branch"] else ""
+        pending = gitview._git(wp, "diff", "--no-ext-diff", "HEAD")
+        status = gitview._git(wp, "status", "--short")
+    except GitError as e:
+        raise WorktreeError(400, "git_failed", e.message) from None
+    out = (f"## Committed on {item['branch']} (since {base})\n{committed}\n" if committed else "") \
+        + (f"## Uncommitted\n{pending}\n" if pending else "") + (f"## Status\n{status}" if status else "")
+    return out[:DIFF_LIMIT] + ("\n[… cut]" if len(out) > DIFF_LIMIT else "")
+
+
+def merge(path: str, wt: str, delete: bool = False) -> dict:
+    """Merge the worktree's branch into the base branch (the one checked out in the repository's own working tree).
+    409 `dirty` / `base_dirty` (uncommitted changes on either side), `conflict` (the merge is aborted). With `delete`
+    the worktree and its branch are removed afterwards."""
+    item, main = _find(path, wt)
+    if item["main"] or not item["branch"]:
+        raise WorktreeError(400, "bad_worktree", "Only a worktree on its own branch can be merged")
+    if not main["branch"]:
+        raise WorktreeError(409, "base_detached", "The repository's own working tree has no branch checked out")
+    wp, mp = _abs(item["path"]), _abs(main["path"])
+    try:
+        if gitview._git(wp, "status", "--porcelain").strip():      # new files count: --delete would lose them
+            raise WorktreeError(409, "dirty", f"{item['path']} has uncommitted changes: commit them first")
+        if gitview._git(mp, "status", "--porcelain", "--untracked-files=no").strip():
+            raise WorktreeError(409, "base_dirty", f"{main['path']} has uncommitted changes")
+        try:
+            gitview._git(mp, "merge", "--no-edit", item["branch"], timeout=ADD_TIMEOUT)
+        except GitError as e:
+            try:
+                gitview._git(mp, "merge", "--abort")
+            except GitError:
+                pass
+            raise WorktreeError(409, "conflict", f"Merge of {item['branch']} into {main['branch']} aborted: {e.message}") from None
+        if delete:
+            gitview._git(mp, "worktree", "remove", str(wp))
+            gitview._git(mp, "branch", "-d", item["branch"])
+    except GitError as e:
+        raise WorktreeError(400, "git_failed", e.message) from None
+    gitview.clear_cache()
+    return {"merged": item["branch"], "into": main["branch"], "deleted": bool(delete), "path": item["path"]}

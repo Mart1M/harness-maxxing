@@ -147,7 +147,8 @@ def public(meta: dict) -> dict:
             "unread": bool(finished) and finished > seen and m.get("state") != "running",
             "last_text": m.get("last_text") or "", "error": m.get("error") or None,
             "plan_mode": bool(m.get("plan_mode")), "plan_ready": bool(m.get("plan_ready")),
-            "permission_mode": m.get("permission_mode") or "", "worktree": m.get("worktree") or ""}
+            "permission_mode": m.get("permission_mode") or "", "worktree": m.get("worktree") or "",
+            "parent": m.get("parent") or ""}
 
 
 _no_window: set[str] = set()      # sessions whose log has no contextWindow (do not rescan on every list)
@@ -305,10 +306,12 @@ def create_session(path: str, message: str | None = None, title: str | None = No
                    env: dict | None = None, timeout_s: int | None = None, plan_mode: bool = False,
                    permission_mode: str = "", auto_title: bool = False, voice_path: str | None = None,
                    client_id: str | None = None, provider: str | None = None,
-                   worktree: str | None = None, new_worktree: dict | None = None) -> dict:
+                   worktree: str | None = None, new_worktree: dict | None = None,
+                   parent: str | None = None) -> dict:
     """`auto_title`: `title` was made from the first message by the caller (Telegram) - still worth a short title.
     `worktree`: a worktree of the topic (its path, from `worktrees.listing`) the turns run in instead of the topic
-    folder; `new_worktree` `{branch, base?, repo?}`: make one first (`worktrees.create`)."""
+    folder; `new_worktree` `{branch, base?, repo?}`: make one first (`worktrees.create`).
+    `parent`: the session that delegated this one (`maxxing agent spawn`): limits in `agents.check_parent`."""
     try:
         p = workspace.normalize_path(path)
         workspace.topic_dir(p)
@@ -319,12 +322,17 @@ def create_session(path: str, message: str | None = None, title: str | None = No
     given = (title or "").strip()[:120]
     model = _check_model(model)
     provider = _check_provider(provider)
+    if parent:
+        from . import agents
+        agents.check_parent(parent)
     wt = _pick_worktree(p, worktree, new_worktree)
     meta = store.new_meta(p, given or _default_title(p, message), model=model or "",
                           source=source, notify=notify, cron=cron, env=env, timeout_s=timeout_s, plan_mode=plan_mode,
                           permission_mode=permission_mode, provider=provider)
     if wt:
         meta["worktree"] = wt
+    if parent:
+        meta["parent"] = parent
     automatic, has_text = auto_title or not given, bool((message or "").strip())
     if automatic and not has_text:
         meta["title_auto"] = meta["title"]       # short title on the first message (titles.first_message)

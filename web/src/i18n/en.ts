@@ -332,6 +332,7 @@ export const en = {
   'wt.basePlaceholder': 'Current branch',
   'wt.hint': 'A new branch gets its own folder next to the code, so sessions do not step on each other. An existing branch is checked out there.',
   'wt.badge': 'Worktree: {name}',
+  'wt.child': 'Delegated by another session',
   'sessions.new.placeholder': 'What should Harness do?',
   'sessions.empty.title': 'No open session',
   'sessions.empty.desc': 'Open a session from the list, or start a new one. Several sessions can sit side by side.',

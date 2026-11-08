@@ -17,6 +17,7 @@ import {
   FolderOpen,
   GripVertical,
   Hash,
+  CornerDownRight,
   GitBranch,
   ListChecks,
   Minimize2,
@@ -49,6 +50,7 @@ import {
   useMarkSeen,
   usePatchSession,
   useSendMessage,
+  useSession,
   useSessionSeeded,
   useSettings,
   useSteerSession,
@@ -1095,6 +1097,7 @@ function MoveSessionPicker({ session, rootLabel }: { session: Session; rootLabel
   const { data: ws } = useWorkspace()
   const patch = usePatchSession()
   const mask = useMask()
+  const { data: parent } = useSession(session.parent || null)
   const setExpanded = useSessionsUI((s) => s.setExpanded)
   const projects = ws?.projects || []
   const m = /^projects\/([^/]+)(?:\/topics\/([^/]+))?$/.exec(session.path)
@@ -1112,6 +1115,14 @@ function MoveSessionPicker({ session, rootLabel }: { session: Session; rootLabel
         <WhereBadge kind="topic" name={m[2]} description={topic?.description} dir={absTopicDir(ws, session.path)} hint={hint}>
           <Hash className="size-3 shrink-0 opacity-70" />
         </WhereBadge>
+      )}
+      {session.parent && parent && (
+        <span className="inline-flex h-[18px] min-w-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 text-[11px] font-medium text-foreground/80 max-md:h-5 max-md:text-xs" title={t('wt.child')} data-testid="where-parent">
+          <CornerDownRight className="size-3 shrink-0 opacity-70" />
+          <span className="truncate">
+            <Sensitive length={8}>{parent.title}</Sensitive>
+          </span>
+        </span>
       )}
       {session.worktree && (
         <span className="inline-flex h-[18px] min-w-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 text-[11px] font-medium text-foreground/80 max-md:h-5 max-md:text-xs" title={t('wt.badge', { name: session.worktree.split('/').pop() ?? '' })} data-testid="where-worktree">

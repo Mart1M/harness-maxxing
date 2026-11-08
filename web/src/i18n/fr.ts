@@ -330,6 +330,7 @@ export const fr: Record<keyof typeof en, string> = {
   'wt.basePlaceholder': 'Branche actuelle',
   'wt.hint': 'Une nouvelle branche reçoit son propre dossier à côté du code : les sessions ne se marchent pas dessus. Une branche existante y est extraite.',
   'wt.badge': 'Worktree : {name}',
+  'wt.child': 'Déléguée par une autre session',
   'sessions.new.placeholder': 'Que doit faire Harness ?',
   'sessions.empty.title': 'Aucune session ouverte',
   'sessions.empty.desc': 'Ouvrez une session depuis la liste ou démarrez-en une. Plusieurs sessions peuvent être côte à côte.',

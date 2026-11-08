@@ -7,6 +7,14 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
 ## Unreleased
 
+- iOS: added the `HarnessLiveActivities` WidgetKit extension (iOS 16.1+) and the shared ActivityKit attributes.
+  `HarnessWebView` injects an authenticated, same-origin `/api/sessions` summary bridge every 3 s; it creates one
+  Live Activity per Harness server while any session is `running`, updates the running/queued counts and first title,
+  and ends it when none run. This deliberately has no APNs Live Activity push token yet, so the app must be open for
+  server-state refreshes.
+- New `maxxing agent` CLI (`cmd_agent.py`) over `maxxing/sessions/agents.py`; session meta `parent` / `Session.parent`;
+  `create_session(parent=)`; `MAXXING_SESSION_ID` in every turn's environment; `worktrees.diff` and `worktrees.merge`.
+  See INTERNALS.md "maxxing.sessions.agents". No migration.
 - New `maxxing/worktrees.py` and `GET /api/worktrees?path=`; `POST /api/sessions` takes `worktree` (a listed path) or
   `new_worktree {branch, base?, repo?}` (`git worktree add` in `<repo>/.worktrees/<branch>`, excluded through the
   repository's `info/exclude`). Session meta gains `worktree` (workspace-relative; the turn's cwd when set), exposed

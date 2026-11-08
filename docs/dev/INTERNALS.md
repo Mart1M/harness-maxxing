@@ -319,6 +319,19 @@ the worktree's slug; `remap_paths` rewrites its prefix (a renamed topic folder b
 `git worktree repair`). Claude still finds the topic's CLAUDE.md and memory.md: they are in a parent of the worktree.
 Web: `useWorktrees(path)` (`lib/queries/worktrees.ts`), picker in `NewSessionColumn`, badge in `MoveSessionPicker`.
 
+## maxxing.sessions.agents + cmd_agent  (owner: sessions)
+Sub-agents: sessions that a session delegates with `maxxing agent …` (any agent that can run a shell command). Meta
+`parent` (session id; `Session.parent`); the runner puts `MAXXING_SESSION_ID` in every turn's environment and `spawn`
+reads it as the parent (and the parent's topic as the default `--path`). `spawn(parent, prompt, path=, agent=, model=,
+title=, worktree= "new:BRANCH[@BASE]" | path | folder | branch, plan=)` -> `service.create_session(parent=…)`, which calls
+`check_parent`: depth at most `MAX_DEPTH` (2: a root and its children may delegate), at most `MAX_ACTIVE` (4) children
+running at once (`429 too_deep|too_many`). `wait(sid, timeout)` polls `get_session` (1 s) until not running and the queue is
+empty; `answer(sid)` = last assistant text of the latest turn; `transcript(sid, tail)`; `diff(sid)` / `merge(sid, delete)`
+-> `worktrees.diff|merge` (merge refused while the sub-agent works, with uncommitted changes in the worktree or in the
+base working tree, aborted on conflict; `delete` removes the worktree and branch and resets the session's `worktree`).
+The CLI runs in its own process like a cron: the server's session watcher shows the new session in the web list.
+Exit codes: 124 when `wait --timeout` expires, 1 on an error or an errored sub-agent.
+
 ## maxxing.gitview  (owner: organisation)
 Read-only git: `local_repos(refresh)` (walk of the files root, MAX_DEPTH 6, MAX_DIRS budget, PRUNE + dot folders,
 8 threads of `summary()`), `resolve(path)` (inside the files root, climbs to the clone), `graph(path, limit,

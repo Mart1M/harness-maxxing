@@ -37,3 +37,25 @@ Claude Code skills and `CLAUDE.md`/memory loading by the CLI itself, Harness MCP
 automatic cost in dollars (Codex and Cursor report tokens, not a price), the context gauge, compaction by Claude Code,
 sub-agent display, short automatic titles made by Claude, and the Claude usage widget. Codex and Cursor read an
 `AGENTS.md` in the topic folder instead of `CLAUDE.md`.
+
+## Sub-agents: delegate from the shell
+
+Any agent running in a session can hand work to another one with the `maxxing agent` command. Each sub-agent is a
+normal session: it shows in the list (marked with an arrow, and with a branch icon when it has a worktree), you can open
+it, read it, answer it or stop it like one you started yourself.
+
+```bash
+maxxing agent spawn "Fix the failing test in api/" --agent codex --worktree new:fix-api   # prints the id
+maxxing agent list                 # the sub-agents of the current session
+maxxing agent wait <id>            # wait until it is done, print its last answer
+maxxing agent read <id> --tail 30  # the end of its conversation
+maxxing agent send <id> "Also update the docs"
+maxxing agent diff <id>            # what its worktree changed
+maxxing agent merge <id> --delete  # merge its branch into the base branch, remove the worktree
+```
+
+`--wait` on `spawn` starts it and waits in one command. `--agent` is `claude`, `codex` or `cursor`. Ids can be
+shortened to their first characters. A session can have 4 sub-agents working at once, and a sub-agent's own sub-agent
+may not delegate again. `merge` stops when the worktree has uncommitted changes or when the merge conflicts (nothing
+is left half-merged). Tell your agent the commands exist: for example add a line about them to the topic's `CLAUDE.md`
+or `AGENTS.md`.

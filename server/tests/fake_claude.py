@@ -148,7 +148,7 @@ def record(o: dict, prompt: str, images: int = 0) -> None:
                                                                    "ANTHROPIC_API_KEY", "MX_TEST_VAR",
                                                                    "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
                                                                    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
-                                                                   "MAXXING_SESSION")},
+                                                                   "MAXXING_SESSION", "MAXXING_SESSION_ID")},
                             "at": time.time()}) + "\n")
 
 

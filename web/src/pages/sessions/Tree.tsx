@@ -23,6 +23,8 @@ import {
   List,
   ListTree,
   MoreHorizontal,
+  CornerDownRight,
+  GitBranch,
   PanelLeftClose,
   Pencil,
   Plus,
@@ -985,6 +987,8 @@ const SessionRow = React.memo(function SessionRow({
               <Sensitive length={10}>{s.title}</Sensitive>
             </span>
             {s.favorite && <Star className="size-3 shrink-0 fill-current text-warning" aria-label={t('sessions.fav.on')} />}
+            {s.parent && <CornerDownRight className="size-3 shrink-0 text-muted-foreground" aria-label={t('wt.child')} />}
+            {s.worktree && <GitBranch className="size-3 shrink-0 text-muted-foreground" aria-label={t('wt.badge', { name: s.worktree.split('/').pop() ?? '' })} />}
             {label && (
               // Only the topic, like the project tree; "project › topic" is in the tooltip.
               <span className="ml-auto flex max-w-[40%] min-w-0 shrink-0 items-center gap-0.5 pl-1 text-[11px] font-normal text-muted-foreground" title={mask(label, 8)} data-testid="session-label">
@@ -1002,6 +1006,8 @@ const SessionRow = React.memo(function SessionRow({
               <Sensitive length={10}>{s.title}</Sensitive>
             </span>
             {s.favorite && <Star className="size-3 shrink-0 fill-current text-warning" aria-label={t('sessions.fav.on')} />}
+            {s.parent && <CornerDownRight className="size-3 shrink-0 text-muted-foreground" aria-label={t('wt.child')} />}
+            {s.worktree && <GitBranch className="size-3 shrink-0 text-muted-foreground" aria-label={t('wt.badge', { name: s.worktree.split('/').pop() ?? '' })} />}
           </span>
           <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-muted-foreground max-md:text-[12.5px]">
             {label && (

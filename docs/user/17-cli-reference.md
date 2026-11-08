@@ -199,6 +199,7 @@ OAuth sign-ins (state "To connect") are done in Settings -> MCP -> **Connect**. 
 | `maxxing memory [--json]` | every memory.md with its line count and the line limit (Settings -> Memory) |
 | `maxxing sessions compact-logs [--dry-run]` | clip the tool outputs of existing session logs and drop the bulky Claude start-up lists and progress lines (frees disk space; `--dry-run` only reports what would be saved) |
 | `maxxing sessions token-report [--days N] [--json]` | where the tokens of your sessions go, read from Claude Code's transcripts: context size per call, cache rewritten after an idle hour or a model switch, the tools whose outputs fill the context, and what automatic compaction at 400k / 300k / 250k / 200k would have saved on the same calls |
+| `maxxing agent spawn "task" [--agent claude\|codex\|cursor] [--worktree new:BRANCH] [--wait]` | start a sub-agent session from a session (or `--path <topic>` from a terminal) and print its id; see [Agents](agents). Also `agent list`, `wait`, `read`, `send`, `stop`, `diff`, `merge [--delete]` |
 
 ## Backup
 
