@@ -14,6 +14,9 @@ Harness from **TestFlight** like any app: a PWA cannot be uploaded to App Store 
   "Change server" button as well.
 - Push notifications (APNs): the app asks for permission, registers with Apple and gives its token to the page, which
   registers it on the server (`Push.swift`, `Harness.entitlements`). Setup of the Apple key: `docs/user/33-notifications.md`.
+- **Live Activities** (iOS 16.1+): when one or more sessions are running, the Lock Screen and Dynamic Island show the
+  active-session count, the first session title and any queued messages. It refreshes while WuitBot is open and closes
+  automatically when the last session ends.
 - Not included: offline mode.
 
 ## Run it in the simulator
@@ -34,9 +37,10 @@ Or open `Harness.xcodeproj` in Xcode and press Run. An HTTP address is accepted 
 
 You need an Apple Developer Program membership (99 USD/year) and Xcode 15 or later on a Mac.
 
-1. **Bundle identifier.** In Xcode, open the project, select the *Harness* target -> *Signing & Capabilities*.
+1. **Bundle identifiers.** In Xcode, open the project, select the *Harness* target -> *Signing & Capabilities*.
    Replace `com.example.harnessmaxxing` with an identifier of yours (`com.yourname.harness`) and pick your *Team*.
-   Automatic signing creates the certificates and the App ID.
+   Then select *HarnessLiveActivities* and use that same identifier with `.liveactivities` appended. Automatic signing
+   creates the certificates and App IDs.
 2. **App record.** On [App Store Connect](https://appstoreconnect.apple.com) -> *Apps* -> *+* -> *New App*: iOS, any
    name, the same bundle identifier, any SKU.
 3. **Archive.** In Xcode choose *Any iOS Device (arm64)* as destination, then *Product -> Archive*.

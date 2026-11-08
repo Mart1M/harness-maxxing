@@ -37,6 +37,8 @@
 	<string>Record voice messages for WuitBot.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save images from WuitBot to your photos.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

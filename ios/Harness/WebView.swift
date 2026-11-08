@@ -91,6 +91,11 @@ struct HarnessWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        let controller = WKUserContentController()
+        controller.add(context.coordinator, name: "harnessLiveActivity")
+        controller.addUserScript(WKUserScript(source: Coordinator.liveActivityBridge, injectionTime: .atDocumentEnd,
+                                               forMainFrameOnly: true))
+        config.userContentController = controller
         config.websiteDataStore = .default()                   // the session cookie survives launches
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
@@ -121,6 +126,32 @@ struct HarnessWebView: UIViewRepresentable {
         let model: WebModel
         private var progressObservation: NSKeyValueObservation?
         private var downloads: [ObjectIdentifier: URL] = [:]
+
+        /// The app owns authentication through WKWebView's cookie jar, so the page fetches its own session list and
+        /// hands the native layer a deliberately small summary rather than exposing the cookie to URLSession.
+        static let liveActivityBridge = """
+        (() => {
+          const report = async () => {
+            try {
+              const response = await fetch('/api/sessions', { credentials: 'same-origin' });
+              if (!response.ok) return;
+              const sessions = await response.json();
+              if (!Array.isArray(sessions)) return;
+              const active = sessions.filter((session) => session && session.state === 'running');
+              const queued = active.reduce((count, session) => count + (Number(session.queue) || 0), 0);
+              const first = active[0];
+              window.webkit?.messageHandlers?.harnessLiveActivity?.postMessage({
+                running: active.length,
+                queued,
+                title: first?.title || ''
+              });
+            } catch (_) {}
+          };
+          report();
+          window.setInterval(report, 3000);
+          window.addEventListener('focus', report);
+        })();
+        """
 
         init(url: URL, model: WebModel) {
             origin = url
@@ -275,6 +306,15 @@ struct HarnessWebView: UIViewRepresentable {
 
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
             downloads.removeValue(forKey: ObjectIdentifier(download))
+        }
+    }
+}
+
+extension HarnessWebView.Coordinator: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "harnessLiveActivity", let host = origin.host else { return }
+        if #available(iOS 16.1, *) {
+            Task { @MainActor in LiveActivityCenter.shared.apply(message.body, serverName: host) }
         }
     }
 }

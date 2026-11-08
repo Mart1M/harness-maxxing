@@ -14,6 +14,10 @@
 		1A0000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000006 /* Assets.xcassets */; };
 		1A0000000000000000000006 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000007 /* Settings.bundle */; };
 		1A0000000000000000000010 /* Push.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000010 /* Push.swift */; };
+		1A0000000000000000000011 /* LiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000012 /* LiveActivity.swift */; };
+		2A0000000000000000000001 /* HarnessLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0000000000000000000001 /* HarnessLiveActivities.swift */; };
+		2A0000000000000000000002 /* LiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000012 /* LiveActivity.swift */; };
+		2A0000000000000000000003 /* HarnessLiveActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B0000000000000000000003 /* HarnessLiveActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +31,10 @@
 		1B0000000000000000000008 /* Harness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B0000000000000000000010 /* Push.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Push.swift; sourceTree = "<group>"; };
 		1B0000000000000000000011 /* Harness.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Harness.entitlements; sourceTree = "<group>"; };
+		1B0000000000000000000012 /* LiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivity.swift; sourceTree = "<group>"; };
+		2B0000000000000000000001 /* HarnessLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarnessLiveActivities.swift; sourceTree = "<group>"; };
+		2B0000000000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2B0000000000000000000003 /* HarnessLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HarnessLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +45,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2E0000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -44,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				1C0000000000000000000002 /* Harness */,
+				2C0000000000000000000001 /* HarnessLiveActivities */,
 				1C0000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +71,7 @@
 				1B0000000000000000000003 /* SetupView.swift */,
 				1B0000000000000000000004 /* WebView.swift */,
 				1B0000000000000000000010 /* Push.swift */,
+				1B0000000000000000000012 /* LiveActivity.swift */,
 				1B0000000000000000000006 /* Assets.xcassets */,
 				1B0000000000000000000007 /* Settings.bundle */,
 				1B0000000000000000000005 /* Info.plist */,
@@ -64,15 +80,47 @@
 			path = Harness;
 			sourceTree = "<group>";
 		};
+		2C0000000000000000000001 /* HarnessLiveActivities */ = {
+			isa = PBXGroup;
+			children = (
+				2B0000000000000000000001 /* HarnessLiveActivities.swift */,
+				2B0000000000000000000002 /* Info.plist */,
+			);
+			path = HarnessLiveActivities;
+			sourceTree = "<group>";
+		};
 		1C0000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				1B0000000000000000000008 /* Harness.app */,
+				2B0000000000000000000003 /* HarnessLiveActivities.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXContainerItemProxy section */
+		2C0000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 210000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2D0000000000000000000001;
+			remoteInfo = HarnessLiveActivities;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1E0000000000000000000004 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (2A0000000000000000000003 /* HarnessLiveActivities.appex in Embed Foundation Extensions */, );
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		1D0000000000000000000001 /* Harness */ = {
@@ -82,15 +130,32 @@
 				1E0000000000000000000001 /* Sources */,
 				1E0000000000000000000002 /* Frameworks */,
 				1E0000000000000000000003 /* Resources */,
+				1E0000000000000000000004 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				2E0000000000000000000004 /* PBXTargetDependency */,
 			);
 			name = Harness;
 			productName = Harness;
 			productReference = 1B0000000000000000000008 /* Harness.app */;
 			productType = "com.apple.product-type.application";
+		};
+		2D0000000000000000000001 /* HarnessLiveActivities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2F0000000000000000000001 /* Build configuration list for PBXNativeTarget "HarnessLiveActivities" */;
+			buildPhases = (
+				2E0000000000000000000001 /* Sources */,
+				2E0000000000000000000002 /* Frameworks */,
+				2E0000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = HarnessLiveActivities;
+			productName = HarnessLiveActivities;
+			productReference = 2B0000000000000000000003 /* HarnessLiveActivities.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -102,10 +167,11 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					1D0000000000000000000001 = {
+				1D0000000000000000000001 = {
 						CreatedOnToolsVersion = 26.0;
 					};
 				};
+				2D0000000000000000000001 = { CreatedOnToolsVersion = 26.0; };
 			};
 			buildConfigurationList = 1F0000000000000000000001 /* Build configuration list for PBXProject "Harness" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -121,6 +187,7 @@
 			projectRoot = "";
 			targets = (
 				1D0000000000000000000001 /* Harness */,
+				2D0000000000000000000001 /* HarnessLiveActivities */,
 			);
 		};
 /* End PBXProject section */
@@ -135,6 +202,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2E0000000000000000000003 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -145,12 +213,23 @@
 				1A0000000000000000000001 /* HarnessApp.swift in Sources */,
 				1A0000000000000000000002 /* ServerConfig.swift in Sources */,
 				1A0000000000000000000010 /* Push.swift in Sources */,
+				1A0000000000000000000011 /* LiveActivity.swift in Sources */,
 				1A0000000000000000000003 /* SetupView.swift in Sources */,
 				1A0000000000000000000004 /* WebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2E0000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (2A0000000000000000000001 /* HarnessLiveActivities.swift in Sources */, 2A0000000000000000000002 /* LiveActivity.swift in Sources */, );
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2E0000000000000000000004 /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = 2D0000000000000000000001 /* HarnessLiveActivities */; targetProxy = 2C0000000000000000000002 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		200000000000000000000001 /* Debug */ = {
@@ -237,6 +316,16 @@
 			};
 			name = Release;
 		};
+		2F0000000000000000000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = { APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = HarnessLiveActivities/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.1; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.harnessmaxxing.liveactivities; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; };
+			name = Debug;
+		};
+		2F0000000000000000000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = { APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = HarnessLiveActivities/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.1; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.harnessmaxxing.liveactivities; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; };
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -255,6 +344,12 @@
 				200000000000000000000003 /* Debug */,
 				200000000000000000000004 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2F0000000000000000000001 /* Build configuration list for PBXNativeTarget "HarnessLiveActivities" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (2F0000000000000000000002 /* Debug */, 2F0000000000000000000003 /* Release */, );
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
