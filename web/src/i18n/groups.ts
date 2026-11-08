@@ -26,6 +26,8 @@ export const GROUPS = {
   drag: ['drag'],
   // a pasted text that became a file: loaded on that paste
   paste: ['paste'],
+  // the working-folder picker of a new session and its worktree badge: loaded on the first key asked
+  wt: ['wt'],
 } as const satisfies Record<string, readonly string[]>
 
 export type Group = keyof typeof GROUPS

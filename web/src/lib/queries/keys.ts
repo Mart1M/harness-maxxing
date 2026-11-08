@@ -37,6 +37,7 @@ export const qk = {
   },
   pc: ['pc'] as const,
   push: ['push'] as const,
+  worktrees: (path: string) => ['worktrees', path] as const,
   backup: {
     all: ['backup'] as const,
     status: ['backup', 'status'] as const,

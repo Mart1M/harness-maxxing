@@ -7,6 +7,11 @@ shown in the product. Newest first, same version headings as `CHANGELOG.md`.
 
 ## Unreleased
 
+- New `maxxing/worktrees.py` and `GET /api/worktrees?path=`; `POST /api/sessions` takes `worktree` (a listed path) or
+  `new_worktree {branch, base?, repo?}` (`git worktree add` in `<repo>/.worktrees/<branch>`, excluded through the
+  repository's `info/exclude`). Session meta gains `worktree` (workspace-relative; the turn's cwd when set), exposed
+  as `Session.worktree`; copied by `handoff`, dropped by `move_session` (transcript moved from the worktree's slug),
+  prefix-rewritten by `remap_paths`. No migration: sessions without the field run in the topic folder as before.
 - The terminal output pane explicitly permits text selection; its click-to-focus behavior now skips a completed
   selection so dragging output can be copied.
 - Session composer provider/model selectors use compact maximum widths and hide their labels at the narrow container

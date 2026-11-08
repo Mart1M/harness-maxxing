@@ -106,6 +106,13 @@ Pick a topic, click **New session**, write your message. The session runs in the
 Claude automatically loads the workspace, project and topic memory (see [Memory](memory)).
 A topic has one new-session draft: picking, in a new session, a topic that already has one open takes you to it.
 
+**Working folder.** When the topic holds a git repository, a **Working folder** menu appears: keep the topic folder
+(default), pick one of the topic's **git worktrees**, or choose **New worktree…** and type a branch name (and, if you
+want, the branch to start from). A new worktree is a separate checkout in `.worktrees/<branch>` inside the repository,
+so two sessions can work on two branches at once without touching each other's files. The session shows its worktree
+next to the topic, keeps it when you hand it off, and goes back to the topic folder if you move it to another topic.
+Remove a worktree you are done with in a terminal: `git worktree remove .worktrees/<branch>`.
+
 **Its title** is short: the start of the message shows at once, then a shortened title replaces it (greetings and
 "can you…" removed, cut on a word): "Tu vas me créer une session d'automatisation de E-ink" becomes *Créer une
 session d'automatisation*. With **Titles written by Claude** on (Settings -> Agents, off by default: one quick call

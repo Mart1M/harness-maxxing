@@ -101,6 +101,8 @@ export type Session = {
   id: string
   title: string
   path: string
+  /** Folder (relative to the workspace) of a git worktree the turns run in instead of the topic folder; "" = the topic folder. */
+  worktree?: string
   state: SessionState
   queue: number
   /** The waiting messages, in order (text cut at 280 chars), whoever queued them. */
@@ -134,7 +136,8 @@ export type ProviderInfo = { id: ProviderId; label: string; installed: boolean; 
 export type ProviderModel = { id: string; label: string; description?: string; context_window?: number | null }
 export type ProviderTestResult = { ok: boolean; ms: number; answer?: string; error?: string }
 export type ProvidersStatus = { default: ProviderId; providers: ProviderInfo[] }
-export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; /** claude | codex | cursor (default: the server's default provider). */ provider?: ProviderId; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string }
+export type CreateSessionBody = { path: string; message?: string; title?: string; model?: string; /** claude | codex | cursor (default: the server's default provider). */ provider?: ProviderId; attachments?: string[]; plan_mode?: boolean; /** Absolute path of a voice message sent directly. */ voice?: string; /** This page's id for the first message (see SendMessageBody). */ client_id?: string; /** Run in one of the topic's worktrees (`Worktree.path`). */ worktree?: string; /** Make a worktree first: a new branch from `base` (default HEAD), or an existing branch. */ new_worktree?: { branch: string; base?: string; repo?: string } }
+export type Worktree = { repo: string; repo_name: string; path: string; name: string; branch: string | null; head: string; main: boolean }
 export type PatchSessionBody = { title?: string; model?: string; /** Switching starts a new thread in the new CLI; the history above is kept. */ provider?: ProviderId; archived?: boolean; notify?: boolean; plan_mode?: boolean; favorite?: boolean; /** Move to another topic (idle sessions only). */ path?: string }
 export type SendMessageBody = { text: string; attachments?: string[]; hud?: boolean; /** Absolute path of a voice message sent directly: the server transcribes it, then sends it. */ voice?: string; /** This page's id for the message, found again in `client_ids` of its queue item and its log event (a reload mid-send checks it). */ client_id?: string }
 export type SendMessageResult = { queued: boolean; session: Session }

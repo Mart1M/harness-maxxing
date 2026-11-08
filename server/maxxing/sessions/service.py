@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-from .. import bus, config, voice, workspace
+from .. import bus, config, voice, workspace, worktrees
 from . import clip, normalize, providers, spawn, store, titles, voicejobs, wake
 from .runner import SUMMARY_PROMPT  # noqa: F401  (also used by the runner's automatic compaction)
 
@@ -147,7 +147,7 @@ def public(meta: dict) -> dict:
             "unread": bool(finished) and finished > seen and m.get("state") != "running",
             "last_text": m.get("last_text") or "", "error": m.get("error") or None,
             "plan_mode": bool(m.get("plan_mode")), "plan_ready": bool(m.get("plan_ready")),
-            "permission_mode": m.get("permission_mode") or ""}
+            "permission_mode": m.get("permission_mode") or "", "worktree": m.get("worktree") or ""}
 
 
 _no_window: set[str] = set()      # sessions whose log has no contextWindow (do not rescan on every list)
@@ -279,6 +279,19 @@ def _spawn(sid: str) -> None:
                                "text": f"Could not start the turn: {e}"[:500]})
 
 
+def _pick_worktree(path: str, worktree: str | None, new_worktree: dict | None) -> str:
+    """The worktree a new session runs in ("" = the topic folder); created here when asked."""
+    try:
+        if new_worktree:
+            return worktrees.create(path, str(new_worktree.get("branch") or ""), str(new_worktree.get("repo") or ""),
+                                    str(new_worktree.get("base") or ""))["path"]
+        if worktree:
+            return worktrees.resolve(path, worktree)
+    except worktrees.WorktreeError as e:
+        raise SessionError(e.status, e.code, e.message) from None
+    return ""
+
+
 def _default_title(path: str, message: str | None) -> str:
     first = titles.provisional(message or "")
     if first:
@@ -291,8 +304,11 @@ def create_session(path: str, message: str | None = None, title: str | None = No
                    source: str = "web", notify: bool = False, cron: bool = False,
                    env: dict | None = None, timeout_s: int | None = None, plan_mode: bool = False,
                    permission_mode: str = "", auto_title: bool = False, voice_path: str | None = None,
-                   client_id: str | None = None, provider: str | None = None) -> dict:
-    """`auto_title`: `title` was made from the first message by the caller (Telegram) - still worth a short title."""
+                   client_id: str | None = None, provider: str | None = None,
+                   worktree: str | None = None, new_worktree: dict | None = None) -> dict:
+    """`auto_title`: `title` was made from the first message by the caller (Telegram) - still worth a short title.
+    `worktree`: a worktree of the topic (its path, from `worktrees.listing`) the turns run in instead of the topic
+    folder; `new_worktree` `{branch, base?, repo?}`: make one first (`worktrees.create`)."""
     try:
         p = workspace.normalize_path(path)
         workspace.topic_dir(p)
@@ -303,9 +319,12 @@ def create_session(path: str, message: str | None = None, title: str | None = No
     given = (title or "").strip()[:120]
     model = _check_model(model)
     provider = _check_provider(provider)
+    wt = _pick_worktree(p, worktree, new_worktree)
     meta = store.new_meta(p, given or _default_title(p, message), model=model or "",
                           source=source, notify=notify, cron=cron, env=env, timeout_s=timeout_s, plan_mode=plan_mode,
                           permission_mode=permission_mode, provider=provider)
+    if wt:
+        meta["worktree"] = wt
     automatic, has_text = auto_title or not given, bool((message or "").strip())
     if automatic and not has_text:
         meta["title_auto"] = meta["title"]       # short title on the first message (titles.first_message)
@@ -646,6 +665,8 @@ def handoff(sid: str) -> dict:
                          env=meta.get("env"), timeout_s=meta.get("timeout_s"))
     if meta.get("favorite"):                 # the continuation stays in the user's favorites
         new["favorite"] = True
+    if meta.get("worktree"):                 # and keeps working in the same worktree
+        new["worktree"] = meta["worktree"]
     new["handoff_pending"] = time.time()     # messages sent to it wait for the summary seed (runner._handoff)
     store.create(new)
     store.append_log(new["id"], {"type": "mx_note", "level": "info", "at": time.time(),
@@ -1070,9 +1091,10 @@ def move_session(sid: str, path: str, meta: dict | None = None) -> None:
         if mm.get("state") == "running" or _waiting(mm):      # again under the lock: a turn may have just started
             raise SessionError(409, "busy", "Wait for the current turn to finish before moving the session")
         old = mm.get("path") or ""
+        was = mm.pop("worktree", "") or old        # a worktree belongs to its topic: the session leaves it
         mm["path"] = new
         csid = mm.get("csid") or sid
-    _move_transcript(csid, root / old if old else root, root / new if new else root)
+    _move_transcript(csid, root / was if was else root, root / new if new else root)
     bus.invalidate("sessions", "workspace")
 
 
@@ -1086,10 +1108,14 @@ def remap_paths(old: str, new: str, sessions: list[dict]) -> None:
         try:
             with store.edit(s["id"]) as m:
                 m["path"] = np
+                wt = m.get("worktree") or ""
+                nwt = new + wt[len(old):] if wt.startswith(old) else wt
+                if wt:
+                    m["worktree"] = nwt
                 csid = m.get("csid") or s["id"]
         except KeyError:
             continue
-        _move_transcript(csid, root / sp, root / np)
+        _move_transcript(csid, root / (wt or sp), root / (nwt or np))
     bus.invalidate("sessions")
 
 

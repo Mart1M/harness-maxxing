@@ -36,6 +36,7 @@ ROUTERS = [
     "hooks",
     "packs",
     "git",
+    "worktrees",
     "mcp",
     "infra",
     "team",

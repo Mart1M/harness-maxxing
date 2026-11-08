@@ -309,6 +309,16 @@ Python modules call each other only through these functions. Keep signatures sta
   (Admin GraphQL `orders`, 250/page, ≤ 4 pages, cancelled orders skipped) and `build_card(data, today, tz)` are pure enough to test.
   Keys from the vault: `SHOPIFY_STORE`, `SHOPIFY_ADMIN_TOKEN`. `MAXXING_SHOPIFY_API` overrides the base URL (tests, demo).
 
+## maxxing.worktrees  (owner: sessions)
+`repos(topic)`, `listing(topic)`, `check_ref(name)`, `resolve(topic, worktree)` (a path of `listing`, else `bad_worktree`),
+`create(topic, branch, repo="", base="")` -> a `listing` entry; `WorktreeError(status, code, message)`. Git through
+`gitview._git` (no hooks, no prompt, 180 s for `worktree add`). Session meta `worktree` (path relative to the workspace)
+replaces `path` as the turn's cwd in `Runner._cwd`; `service.create_session(worktree=, new_worktree=)` validates or
+creates it before the meta is written; `handoff` copies it; `move_session` drops it and moves the Claude transcript from
+the worktree's slug; `remap_paths` rewrites its prefix (a renamed topic folder breaks git's link to a worktree: run
+`git worktree repair`). Claude still finds the topic's CLAUDE.md and memory.md: they are in a parent of the worktree.
+Web: `useWorktrees(path)` (`lib/queries/worktrees.ts`), picker in `NewSessionColumn`, badge in `MoveSessionPicker`.
+
 ## maxxing.gitview  (owner: organisation)
 Read-only git: `local_repos(refresh)` (walk of the files root, MAX_DEPTH 6, MAX_DIRS budget, PRUNE + dot folders,
 8 threads of `summary()`), `resolve(path)` (inside the files root, climbs to the clone), `graph(path, limit,

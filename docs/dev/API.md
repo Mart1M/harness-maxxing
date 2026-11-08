@@ -104,11 +104,12 @@ Session = {
   error: string|null,
   plan_mode: bool,                    // turns run read-only (`--permission-mode plan`) and end with a plan
   permission_mode: string,            // set by its cron ("" = the topic's, else the global mode)
+  worktree: string,                   // git worktree the turns run in, relative to the workspace ("" = the topic folder); see Worktrees
   plan_ready: bool                    // a plan-mode turn finished OK: its plan waits for POST /plan/approve
 }
 ```
 | GET | `/api/sessions?path=&archived=0\|1` | – | `[Session]` sorted by `updated` desc (no path = all) |
-| POST | `/api/sessions` | `{path, message?, title?, model?, provider?:"claude"\|"codex"\|"cursor", attachments?:[filepath], plan_mode?:bool, voice?:filepath, client_id?}` (`client_id`: as for `/messages`, for the first message) | `Session` (starts the first turn if message or voice) |
+| POST | `/api/sessions` | `{path, message?, title?, model?, provider?:"claude"\|"codex"\|"cursor", attachments?:[filepath], plan_mode?:bool, voice?:filepath, client_id?, worktree?:path, new_worktree?:{branch, base?, repo?}}` (`client_id`: as for `/messages`, for the first message; `worktree`: one of `GET /api/worktrees?path=<topic>`, the turns run there instead of the topic folder, `400 bad_worktree` otherwise; `new_worktree`: makes `<repo>/.worktrees/<branch>` first, see Worktrees, and wins over `worktree`) | `Session` (starts the first turn if message or voice) |
 | GET | `/api/sessions/{id}` | – | `Session` |
 | PATCH | `/api/sessions/{id}` | `{title?, model?, provider?, archived?, notify?, plan_mode?, favorite?, path?}` | `Session` (`plan_mode:false` also clears `plan_ready`; `favorite` is carried over by a hand-off; `path` moves the session to another topic and its Claude transcript with it - `400 bad_path`, `409 busy` while a turn runs or messages wait; `model`: an id of letters, digits and `._:@/[]-`, 100 characters at most, not starting with `-`, else `400 bad_model`, also on create) |
 | POST | `/api/sessions/{id}/plan/approve` | `{text?}` (shown in the thread as the user's message) | `{queued:bool, session:Session}` — plan mode off, then a turn that tells Claude to implement its latest plan (queue item flag `plan_approved`, kept by steer like `hud`) |
@@ -160,6 +161,22 @@ previous night — open streams then receive `reset`. **Event** (normalised):
                                                     // summary = the agent's final report (≤ 20 kB) · commands run by a sub-agent are dropped.
                                                     // Not counted in `tail` / `limit` (they are not thread rows).
 ```
+
+## Worktrees
+
+`maxxing/worktrees.py`: the git worktrees of a topic, for the new-session picker. A topic's repository is its folder when
+that is a git repository, else the repositories found inside it (a clone's linked worktrees count once). Paths are
+relative to the workspace.
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| GET | `/api/worktrees?path=<topic>` | – | `[{repo, repo_name, path, name, branch\|null, head, main}]`: every worktree of the topic's repositories whose folder is inside the topic (`main` = the repository's own working tree, `branch` null = detached HEAD); `[]` without a repository |
+
+Creating one is part of `POST /api/sessions` (`new_worktree: {branch, base?, repo?}`): `git worktree add` in
+`<repo>/.worktrees/<branch with / as ->` (`.worktrees/` is added to the repository's `info/exclude`), on a new branch from
+`base` (default HEAD) or on the existing branch. Errors: `400 bad_branch|bad_base|bad_repo|bad_worktree|git_failed`,
+`404 no_repo`, `409 exists` (folder taken, or the branch is checked out elsewhere). A session keeps its `worktree`
+through a hand-off; moving it to another topic (`PATCH path`) puts it back in that topic's folder.
 
 ## Global bus
 `GET /api/stream` — **SSE**, `event: invalidate`, `data: {"topics": ["sessions"|"workspace"|"tasks"|"crons"|"telegram"|"backup"|"health"|"extensions"|"trash"|"feed"]}`. The UI refetches the matching queries. Heartbeat every 15 s. Both SSE streams (this one and `/api/sessions/{id}/stream`) re-check their cookie before each frame (one stat of secrets.json while unchanged, a full check at least every 15 s): signed out, password changed, `sessions_not_before` or expired -> the stream ends without sending anything more (the browser's reconnect then gets `401`). Concurrent SSE streams are capped (both kinds together): 24 per sign-in, 96 in total (`streamcap`); beyond that `429 {"error":"too_many_streams"}` with `Retry-After: 5`. A session that appears, goes away or changes state/unread (turn started or ended) sends `sessions` and `workspace` together; the UI relies on that pair to refresh the workspace tree, the Claude status and the token stats.

@@ -6,6 +6,7 @@ All notable changes to Harness Maxxing. Versions follow semantic versioning.
 ## Unreleased
 
 New:
+- **Git worktrees for new sessions.** When a topic holds a git repository, the new-session form lets you run the session in one of the topic's worktrees, or create one from a branch name, so several sessions can work on different branches side by side.
 - **Scheduled jobs can choose their AI agent.** Select Claude Code, Codex CLI or Cursor CLI when creating or editing a prompt job; its model list follows the selected agent.
 - **Terminal in the sidebar.** Type a Bash command directly at its prompt in your workspace; interactive programs such as `agent login` can ask for input there too.
 

@@ -50,6 +50,12 @@ class _Text(BaseModel):
 CLIENT_ID_RE = r"^[A-Za-z0-9_-]{1,64}$"
 
 
+class NewWorktreeIn(_Text):
+    branch: str = Field(max_length=100)       # created from `base` unless it exists
+    base: str = Field("", max_length=100)     # default: the repository's HEAD
+    repo: str = Field("", max_length=300)     # repository of the topic (default: the first)
+
+
 class CreateIn(_Text):
     path: str = ""
     message: str | None = None
@@ -60,6 +66,8 @@ class CreateIn(_Text):
     plan_mode: bool = False
     voice: str | None = None          # absolute path of a voice message sent directly (transcribed afterwards)
     client_id: str | None = Field(None, pattern=CLIENT_ID_RE)   # the sender's id for the first message (see MessageIn)
+    worktree: str | None = None       # path of one of the topic's worktrees (GET /api/worktrees): the turns run there
+    new_worktree: NewWorktreeIn | None = None   # make a worktree first (wins over `worktree`)
 
 
 class PatchIn(_Text):
@@ -133,7 +141,8 @@ async def create_session(body: CreateIn):
     return await _call(service.create_session, body.path, message=body.message, title=body.title,
                        model=body.model, attachments=body.attachments, source="web",
                        plan_mode=body.plan_mode, voice_path=body.voice, client_id=body.client_id,
-                       provider=body.provider)
+                       provider=body.provider, worktree=body.worktree,
+                       new_worktree=body.new_worktree.model_dump() if body.new_worktree else None)
 
 
 @router.get("/sessions/search")

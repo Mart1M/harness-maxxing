@@ -17,6 +17,7 @@ import {
   FolderOpen,
   GripVertical,
   Hash,
+  GitBranch,
   ListChecks,
   Minimize2,
   MoreHorizontal,
@@ -55,11 +56,12 @@ import {
   useStopSession,
   useTelegram,
   useWorkspace,
+  useWorktrees,
   uploadAttachment,
   sessionsQuery,
 } from '@/lib/queries'
 import { errorMessage, isApiError } from '@/lib/api'
-import type { ProviderId, Session } from '@/lib/types'
+import type { CreateSessionBody, ProviderId, Session } from '@/lib/types'
 import {
   Button,
   confirm,
@@ -1111,6 +1113,14 @@ function MoveSessionPicker({ session, rootLabel }: { session: Session; rootLabel
           <Hash className="size-3 shrink-0 opacity-70" />
         </WhereBadge>
       )}
+      {session.worktree && (
+        <span className="inline-flex h-[18px] min-w-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 text-[11px] font-medium text-foreground/80 max-md:h-5 max-md:text-xs" title={t('wt.badge', { name: session.worktree.split('/').pop() ?? '' })} data-testid="where-worktree">
+          <GitBranch className="size-3 shrink-0 opacity-70" />
+          <span className="truncate">
+            <Sensitive length={8}>{session.worktree.split('/').pop() ?? ''}</Sensitive>
+          </span>
+        </span>
+      )}
       {!busy && <ChevronDown className="size-3 shrink-0 opacity-60" />}
     </>
   ) : (
@@ -1189,6 +1199,8 @@ export function WhereBadge({ kind, name, description, dir, hint, generic, childr
   )
 }
 
+const NEW_WORKTREE = '__new_worktree__'
+
 export function NewSessionColumn({ col, variant, index, count, place }: { col: Extract<Col, { kind: 'new' }>; variant: ColumnVariant; index: number; count: number; place?: Place }) {
   const t = useT()
   const { data: ws } = useWorkspace()
@@ -1207,6 +1219,20 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
   const [dragFiles, setDragFiles] = React.useState(false)
   const mask = useMask()
   const topics = (ws?.projects || []).flatMap((p) => p.topics)
+  // Working folder: the topic folder, one of the topic's git worktrees, or a new one (branch typed below).
+  const { data: worktrees = [] } = useWorktrees(col.path, topics.some((tp) => tp.path === col.path))
+  const [wtChoice, setWtChoice] = React.useState('')
+  const [wtBranch, setWtBranch] = React.useState('')
+  const [wtBase, setWtBase] = React.useState('')
+  const wtNew = wtChoice === NEW_WORKTREE && worktrees.length > 0
+  const wtExisting = worktrees.some((w) => w.path === wtChoice) ? wtChoice : ''
+  const wtBody = (): Pick<CreateSessionBody, 'worktree' | 'new_worktree'> =>
+    wtNew ? { new_worktree: { branch: wtBranch.trim(), base: wtBase.trim() || undefined } } : wtExisting ? { worktree: wtExisting } : {}
+  const wtOptions = [
+    { value: '', label: t('wt.none') },
+    ...worktrees.map((w) => ({ value: w.path, label: w.main ? t('wt.main', { branch: w.branch || w.name }) : w.branch || w.name, hint: w.head })),
+    { value: NEW_WORKTREE, label: t('wt.new') },
+  ]
   const options = topics.map((tp) => ({ value: tp.path, label: mask(`${tp.project} / ${tp.name}`, 10) }))
   const valid = topics.some((tp) => tp.path === col.path)
 
@@ -1232,8 +1258,12 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
 
   const onSend = async (text: string, attachments: string[], clientId?: string) => {
     if (made.current) return toMade(made.current, text, attachments, { client_id: clientId })
+    if (wtNew && !wtBranch.trim()) {
+      toast.error(t('wt.branch'))
+      return false
+    }
     try {
-      const s = await create.mutateAsync({ path: col.path, message: text, client_id: clientId, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, attachments, plan_mode: planMode || undefined })
+      const s = await create.mutateAsync({ ...wtBody(), path: col.path, message: text, client_id: clientId, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, attachments, plan_mode: planMode || undefined })
       made.current = s.id
       seedEmptyLog(s.id)
       usePending.getState().add(s.id, { text, attachments, queued: false })
@@ -1251,7 +1281,11 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
     try {
       const up = await uploadAttachment(col.path, file)
       if (made.current) return toMade(made.current, '', [], { voice: up.path })
-      const s = await create.mutateAsync({ path: col.path, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, plan_mode: planMode || undefined, voice: up.path })
+      if (wtNew && !wtBranch.trim()) {
+        toast.error(t('wt.branch'))
+        return false
+      }
+      const s = await create.mutateAsync({ ...wtBody(), path: col.path, title: title.trim() || undefined, model: model || undefined, provider: providerChoice || undefined, plan_mode: planMode || undefined, voice: up.path })
       made.current = s.id
       seedEmptyLog(s.id)
       usePending.getState().add(s.id, { text: '', attachments: [], queued: false, voice: true })
@@ -1341,6 +1375,21 @@ export function NewSessionColumn({ col, variant, index, count, place }: { col: E
               <Label htmlFor={`topic-${col.key}`}>{t('sessions.new.topic')}</Label>
               <Combobox id={`topic-${col.key}`} value={col.path} onChange={(v) => setNewPath(col.key, v)} options={options} placeholder={t('sessions.new.pickTopic')} />
             </div>
+            {worktrees.length > 0 && (
+              <div className="grid gap-1.5">
+                <Label htmlFor={`wt-${col.key}`} className="flex items-center gap-1.5">
+                  <GitBranch className="size-3.5 text-muted-foreground" /> {t('wt.label')}
+                </Label>
+                <Combobox id={`wt-${col.key}`} value={wtNew ? NEW_WORKTREE : wtExisting} onChange={setWtChoice} options={wtOptions} />
+                {wtNew && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input aria-label={t('wt.branch')} value={wtBranch} onChange={(e) => setWtBranch(e.target.value)} placeholder={t('wt.branchPlaceholder')} maxLength={100} autoComplete="off" autoCapitalize="none" spellCheck={false} />
+                    <Input aria-label={t('wt.base')} value={wtBase} onChange={(e) => setWtBase(e.target.value)} placeholder={t('wt.basePlaceholder')} maxLength={100} autoComplete="off" autoCapitalize="none" spellCheck={false} />
+                  </div>
+                )}
+                {wtNew && <p className="text-xs text-muted-foreground">{t('wt.hint')}</p>}
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor={`title-${col.key}`}>
                 {t('sessions.new.titleLabel')} <span className="font-normal text-muted-foreground">{t('sessions.new.optional')}</span>

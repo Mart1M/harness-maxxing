@@ -260,7 +260,7 @@ class Runner:
             item = heard
         cwd = self._cwd(cfg, meta)
         if cwd is None:
-            err = f"Topic folder not found: {meta.get('path')!r}"
+            err = f"Topic folder not found: {meta.get('worktree') or meta.get('path')!r}"
             self.note(err, "error")
             self._record(Attempt(rc=1, stderr=err), item)
             return err
@@ -447,7 +447,7 @@ class Runner:
     @staticmethod
     def _cwd(cfg: dict, meta: dict) -> str | None:
         root = Path(cfg.get("workspace") or "/").resolve()
-        cwd = (root / (meta.get("path") or "")).resolve()
+        cwd = (root / (meta.get("worktree") or meta.get("path") or "")).resolve()
         if cwd != root and root not in cwd.parents:
             return None
         return str(cwd) if cwd.is_dir() else None
